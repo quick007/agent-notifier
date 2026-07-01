@@ -198,21 +198,22 @@ Requirements from the root manifest:
 
 - Node.js `>=24.0.0`
 - pnpm `>=11.0.0`
+- Vite+ CLI `vp`
 
 Common commands:
 
 ```bash
-pnpm install
-pnpm dev
-pnpm build
-pnpm typecheck
-pnpm test
-pnpm check:packages
-pnpm check
+vp install
+vp run -w dev
+vp run -w build
+vp run -w typecheck
+vp run -w test
+vp run -w check:packages
+vp run -w check
 ```
 
-`pnpm dev` starts the Vite/Cloudflare app. `pnpm check` runs typecheck, tests,
-the repository file-length check, and package verification.
+`vp run -w dev` starts the Vite+/Cloudflare app. `vp run -w check` runs
+typecheck, tests, the repository file-length check, and package verification.
 
 ## Supply Chain
 

@@ -1,7 +1,7 @@
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 import { exportPublicKeySpki, generateEncryptionKeyPair } from "@agent-notifier/crypto";
 import { sendMessage, setupNotifier } from "../dist/client.js";
 import { writeState } from "../dist/store.js";

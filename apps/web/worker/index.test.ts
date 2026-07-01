@@ -1,6 +1,6 @@
 import { hc } from "hono/client";
 import { SIGNED_REQUEST_HEADERS } from "@agent-notifier/protocol";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import type { AppType } from "@agent-notifier/web/api-contract";
 import worker from "./index";

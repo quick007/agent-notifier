@@ -111,21 +111,33 @@ function packageRank(packageDir) {
   return index === -1 ? Number.MAX_SAFE_INTEGER : index;
 }
 
-function runPnpm(args, packageName) {
-  const result = spawnSync("pnpm", args, {
+function runVp(args, packageName) {
+  const result = spawnSync(resolveVpCommand(), args, {
     encoding: "utf8"
   });
 
   if (result.status !== 0) {
     const details = [
       result.error?.message,
-      result.stderr.trim(),
-      result.stdout.trim()
+      result.stderr?.trim(),
+      result.stdout?.trim()
     ].filter(Boolean).join("\n");
-    throw new Error(`pnpm failed for ${packageName}: ${args.join(" ")}${details ? `\n${details}` : ""}`);
+    throw new Error(`vp failed for ${packageName}: ${args.join(" ")}${details ? `\n${details}` : ""}`);
   }
 
   return result;
+}
+
+function resolveVpCommand() {
+  if (process.platform !== "win32") {
+    return "vp";
+  }
+
+  const vitePlusHome = process.env.VITE_PLUS_HOME
+    ?? (process.env.USERPROFILE ? join(process.env.USERPROFILE, ".vite-plus") : undefined);
+  const vpExe = vitePlusHome ? join(vitePlusHome, "current", "bin", "vp.exe") : undefined;
+
+  return vpExe && existsSync(vpExe) ? vpExe : "vp";
 }
 
 for (const packageDir of packageDirs) {
@@ -198,13 +210,13 @@ for (const packageDir of packageDirs) {
   }
 
   if (manifest.scripts?.build) {
-    runPnpm(["--dir", packageDir, "run", "build"], manifest.name);
+    runVp(["run", `${manifest.name}#build`], manifest.name);
   }
 
   const packTempDir = mkdtempSync(join(tmpdir(), "agent-notifier-pack-"));
   try {
-    const result = runPnpm(
-      ["--dir", packageDir, "pack", "--json", "--pack-destination", packTempDir],
+    const result = runVp(
+      ["pm", "pack", "--filter", manifest.name, "--json", "--pack-destination", packTempDir],
       manifest.name
     );
     const parsed = JSON.parse(result.stdout);

@@ -65,13 +65,13 @@ Deployment is not complete or live-verified.
 From the repository root:
 
 ```bash
-pnpm install --frozen-lockfile
-pnpm build
-pnpm typecheck
-pnpm test
-pnpm check:file-length
-pnpm check:packages
-pnpm check
+vp install
+vp run -w build
+vp run -w typecheck
+vp run -w test
+vp run -w check:file-length
+vp run -w check:packages
+vp run -w check
 ```
 
 Run these checks before release work and preserve the terminal logs or CI links
@@ -81,7 +81,7 @@ with the release notes. Passing local checks do not prove live deployment.
 
 This app uses the Cloudflare Vite plugin. `apps/web/wrangler.jsonc` is the input
 configuration, not the final deploy configuration. It intentionally omits
-`assets.directory`; `vite build` generates the deployable Worker config at:
+`assets.directory`; `vp build` generates the deployable Worker config at:
 
 ```text
 apps/web/dist/agent_notifier_web/wrangler.json
@@ -90,15 +90,15 @@ apps/web/dist/agent_notifier_web/wrangler.json
 Do not deploy with the source config directly:
 
 ```bash
-pnpm exec wrangler deploy --config apps/web/wrangler.jsonc
+vp exec wrangler deploy --config apps/web/wrangler.jsonc
 ```
 
 That command cannot work for this Vite Static Assets setup because the source
 config does not contain the generated assets directory. Use the scripted flow:
 
 ```bash
-pnpm deploy:web:dry-run
-pnpm deploy:web
+vp run -w deploy:web:dry-run
+vp run -w deploy:web
 ```
 
 These scripts build first, then call Wrangler with the generated config.
@@ -144,7 +144,7 @@ reporting are tested on real browser devices.
 
 Package CI and tag-driven npm publish workflow files exist under
 `.github/workflows`. Manual dispatch is for dry-run verification.
-`pnpm check:packages` builds and dry-runs publishable packages.
+`vp run -w check:packages` builds and dry-runs publishable packages.
 
 Do not claim npm publication, trusted publisher setup, provenance, or install
 readiness until a real release succeeds.
@@ -155,7 +155,7 @@ Cloudflare dashboard or account steps still required:
 
 - Confirm the D1 database ID in `apps/web/wrangler.jsonc` still points at the
   baselined `agent-notifier` database in the Lukas account before deployment.
-- Re-run `pnpm --filter @agent-notifier/web d1:migrate:remote` after any new
+- Re-run `vp run @agent-notifier/web#d1:migrate:remote` after any new
   migration files are added. D1 migrations use the source Wrangler config
   because migrations operate from `apps/web/migrations`, not the generated Vite
   deploy output.
@@ -179,16 +179,16 @@ Resend dashboard steps still required:
 
 Before any public deployment claim, verify:
 
-- `pnpm install --frozen-lockfile`
-- `pnpm build`
-- `pnpm typecheck`
-- `pnpm test`
-- `pnpm check:file-length`
-- `pnpm check:packages`
-- `pnpm check`
+- `vp install`
+- `vp run -w build`
+- `vp run -w typecheck`
+- `vp run -w test`
+- `vp run -w check:file-length`
+- `vp run -w check:packages`
+- `vp run -w check`
 - D1 migrations applied to the configured database
 - Worker secrets set in Cloudflare
-- Worker deploy through `pnpm deploy:web`, which uses the generated Vite Worker
+- Worker deploy through `vp run -w deploy:web`, which uses the generated Vite+ Worker
   config
 - Resend setup email with real credentials
 - Web Push wakeup behavior with real VAPID keys

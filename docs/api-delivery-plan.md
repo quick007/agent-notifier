@@ -117,10 +117,10 @@ Current route families:
 Relevant checks:
 
 ```bash
-pnpm --filter @agent-notifier/web typecheck
-pnpm --filter @agent-notifier/web test
-pnpm build
-pnpm check
+vp run @agent-notifier/web#typecheck
+vp run @agent-notifier/web#test
+vp run -w build
+vp run -w check
 ```
 
 These checks are local verification only. They do not prove live Cloudflare

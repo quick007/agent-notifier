@@ -7,8 +7,12 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "build": "tsc --noEmit",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests"
+    "build": "vp exec tsc --noEmit",
+    "typecheck": "vp exec tsc --noEmit",
+    "test": "vp exec vitest run --passWithNoTests"
+  },
+  "devDependencies": {
+    "vite-plus": "catalog:",
+    "vitest": "catalog:"
   }
 }

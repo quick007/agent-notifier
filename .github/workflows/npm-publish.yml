@@ -14,25 +14,29 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v4
+      - uses: voidzero-dev/setup-vp@v1
+        with:
+          node-version: "24"
+          cache: true
       - uses: actions/setup-node@v6
         with:
           node-version: "24"
-          cache: pnpm
           registry-url: "https://registry.npmjs.org"
       - run: npm install -g npm@11.18.0
-      - run: pnpm install --frozen-lockfile
+      - run: vp install
       - name: Validate release tag
         if: github.event_name == 'push'
         run: |
           node -e "const fs=require('node:fs'); const version=process.env.GITHUB_REF_NAME.replace(/^v/,''); for (const file of ['package.json','packages/protocol/package.json','packages/crypto/package.json','packages/cli/package.json','packages/mcp/package.json']) { const manifest=JSON.parse(fs.readFileSync(file,'utf8')); if (manifest.version !== version) throw new Error(`${file} version ${manifest.version} does not match tag v${version}`); }"
-      - run: pnpm check
+      - run: vp run -w check
       - name: Pack packages
         run: |
           set -euo pipefail
           mkdir -p npm-artifacts
           for package_dir in packages/protocol packages/crypto packages/cli packages/mcp; do
-            pnpm --dir "$package_dir" pack --json --pack-destination "$GITHUB_WORKSPACE/npm-artifacts"
+            package_name="@agent-notifier/${package_dir#packages/}"
+            vp run "$package_name#build"
+            vp pm pack --filter "$package_name" --json --pack-destination "$GITHUB_WORKSPACE/npm-artifacts"
           done
       - name: Dry-run package publish
         if: github.event_name == 'workflow_dispatch'

@@ -65,7 +65,7 @@ Sibling instructions:
 - If using the dashboard import flow, align the Worker name, routes, D1 bindings, Queue bindings, and Cron Triggers with `wrangler.jsonc` before first production deploy.
 - Use `wrangler secret put` for `RESEND_API_KEY` and `VAPID_PRIVATE_KEY`.
 - Keep public VAPID key and non-secret values as explicit typed vars only if they are safe to publish.
-- With the Cloudflare Vite plugin, set Cloudflare environments at build time, for example `CLOUDFLARE_ENV=staging vite build`, rather than relying on `wrangler deploy --env`.
+- With the Cloudflare Vite plugin, set Cloudflare environments at build time, for example `CLOUDFLARE_ENV=staging vp build`, rather than relying on `wrangler deploy --env`.
 
 ## ADR 003: D1 and Drizzle Data Model
 

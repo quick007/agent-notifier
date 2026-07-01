@@ -1,6 +1,6 @@
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { expect, test } from "vitest";
+import { expect, test } from "vite-plus/test";
 import { TOOL_DEFINITIONS, callTool } from "../dist/tools.js";
 
 function tool(name: string): Record<string, unknown> {

@@ -19,9 +19,9 @@ material locally, so publishing must be tokenless, reproducible, and narrow.
 - Do not add `preinstall`, `install`, `postinstall`, `prepare`, `prepack`,
   `postpack`, `prepublish`, `prepublishOnly`, `publish`, or `postpublish`
   lifecycle scripts to published packages.
-- Run `pnpm pack --json` per package directory through
-  `node scripts/verify-packages.mjs` so verification matches the release
-  tarball path and workspace dependency rewrite.
+- Run `vp run -w check:packages` so package builds use Vite+ and pack
+  verification still matches the release tarball path and workspace dependency
+  rewrite.
 - Keep runtime dependencies zero or near-zero; document every external runtime
   dependency before adding it. The CLI currently uses `hono` only for its
   typed `hc` client proxy; encryption/signing still comes from local workspace
@@ -51,11 +51,12 @@ verification.
 Public package manifests use `https://github.com/quick007/agent-notifier` for
 repository, homepage, and issue tracker metadata.
 
-The release workflow packs with pnpm, then stages the generated tarballs with
-`npm stage publish`. This keeps pnpm's workspace dependency rewrite while using
-npm CLI OIDC and provenance support for registry staging. The manual workflow
-dispatch path builds, checks, packs, and runs `npm publish --dry-run` only; it
-does not receive OIDC permissions.
+The release workflow installs and checks through Vite+, then packs with
+`vp pm pack` and stages the generated tarballs with `npm stage publish`. This
+keeps pnpm's workspace dependency rewrite while using npm CLI OIDC and
+provenance support for registry staging. The manual workflow dispatch path
+builds, checks, packs, and runs `npm publish --dry-run` only; it does not
+receive OIDC permissions.
 
 The build/pack job does not receive OIDC. Only the staging job has
 `id-token: write`, downloads already-built tarballs, and runs
@@ -74,7 +75,7 @@ publisher permissions to stage-only and disallow traditional tokens.
 
 GitHub Actions are intentionally not SHA-pinned for the initial `0.x` release
 lane while the workflow is still changing. The deliberate exception is limited
-to maintained first-party GitHub actions and `pnpm/action-setup` floating at
+to maintained first-party GitHub actions and `voidzero-dev/setup-vp` floating at
 major versions. Review workflow diffs before tagging, and pin by SHA before a
 broader public or 1.0 release.
 

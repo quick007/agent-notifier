@@ -38,13 +38,17 @@
     "package.json"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
-    "typecheck": "tsc --noEmit",
-    "test": "pnpm build && pnpm exec vitest run --passWithNoTests",
+    "build": "vp exec tsc -p tsconfig.build.json",
+    "typecheck": "vp exec tsc --noEmit",
+    "test": "vp run build && vp exec vitest run --passWithNoTests",
     "pack:dry-run": "npm pack --dry-run --json"
   },
   "dependencies": {
     "@agent-notifier/cli": "workspace:*"
+  },
+  "devDependencies": {
+    "vite-plus": "catalog:",
+    "vitest": "catalog:"
   },
   "engines": {
     "node": ">=24.0.0"

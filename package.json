@@ -28,21 +28,23 @@
     "pnpm": ">=11.0.0"
   },
   "scripts": {
-    "dev": "pnpm --filter @agent-notifier/web dev",
-    "build": "pnpm -r --if-present build",
-    "typecheck": "pnpm -r --if-present typecheck",
-    "test": "pnpm -r --if-present test",
-    "check:file-length": "tsx scripts/check-file-length.ts",
+    "dev": "vp run @agent-notifier/web#dev",
+    "build": "vp run --filter @agent-notifier/* build",
+    "typecheck": "vp run --filter @agent-notifier/* typecheck",
+    "test": "vp run --filter @agent-notifier/* test",
+    "check:file-length": "vp exec tsx scripts/check-file-length.ts",
     "check:packages": "node scripts/verify-packages.mjs",
-    "check": "pnpm typecheck && pnpm test && pnpm check:file-length && pnpm check:packages",
-    "deploy:web:dry-run": "pnpm --filter @agent-notifier/web deploy:dry-run",
-    "deploy:web": "pnpm --filter @agent-notifier/web deploy"
+    "check": "vp run -w typecheck && vp run -w test && vp run -w check:file-length && vp run -w check:packages",
+    "deploy:web:dry-run": "vp run @agent-notifier/web#deploy:dry-run",
+    "deploy:web": "vp run @agent-notifier/web#deploy"
   },
   "devDependencies": {
     "@types/node": "24.13.2",
     "tsx": "4.22.4",
     "typescript": "6.0.3",
-    "vitest": "4.1.9",
+    "vite": "catalog:",
+    "vite-plus": "catalog:",
+    "vitest": "catalog:",
     "wrangler": "4.106.0"
   }
 }

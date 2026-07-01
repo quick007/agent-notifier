@@ -105,11 +105,11 @@ Scheduled path:
 Local checks:
 
 ```bash
-pnpm install --frozen-lockfile
-pnpm --filter @agent-notifier/web typecheck
-pnpm --filter @agent-notifier/web test
-pnpm build
-pnpm check
+vp install
+vp run @agent-notifier/web#typecheck
+vp run @agent-notifier/web#test
+vp run -w build
+vp run -w check
 ```
 
 Before public launch, still verify Cloudflare deployment, D1 migrations, Resend

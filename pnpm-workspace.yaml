@@ -2,6 +2,13 @@ packages:
   - "apps/*"
   - "packages/*"
 
+catalog:
+  vite: npm:@voidzero-dev/vite-plus-core@0.2.1
+  vite-plus: 0.2.1
+  vitest: 4.1.9
+
+catalogMode: prefer
+
 # Publishable packages may depend on sibling packages by released semver
 # ranges; link matching local workspace packages during development.
 linkWorkspacePackages: true
@@ -27,3 +34,15 @@ minimumReleaseAgeExclude:
   - vite@8.1.2
   - workerd@1.20260630.1
   - wrangler@4.106.0
+
+overrides:
+  vite: "catalog:"
+  vitest: "catalog:"
+
+peerDependencyRules:
+  allowAny:
+    - vite
+    - vitest
+  allowedVersions:
+    vite: "*"
+    vitest: "*"

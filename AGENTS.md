@@ -8,7 +8,9 @@ Agent Notifier is an encrypted notification and lightweight approval product for
 - Use a Cloudflare Workers-native app/router layer. Prefer the repo's eventual scaffold and avoid substituting a heavy framework without a reason.
 - Use Drizzle for data access. Avoid raw SQL in application code. Raw SQL is acceptable for generated or hand-reviewed migrations when Drizzle cannot express the DDL cleanly.
 - Design D1 schemas as if Postgres may come later: app-generated IDs, portable timestamps, explicit ownership/scoping, and no SQLite-only tricks unless they are isolated.
-- Prefer Vite+ commands if this repo is scaffolded with Vite+. Avoid unnecessary installs/builds.
+- Use Vite+ commands for project work. Prefer `vp install`, `vp run <script>`, `vp exec <binary>`, and `vp dlx <package>` over direct package-manager commands.
+- Vite+ built-ins such as `vp dev`, `vp build`, and `vp test` run Vite+ tools, not same-named package scripts. Use `vp run <script>` when you need a package script with a built-in name.
+- Do not install wrapped tools such as Vitest, Oxlint, Oxfmt, or tsdown directly just to upgrade them; use the repo's Vite+ wrapper commands.
 
 ## Product Priorities
 

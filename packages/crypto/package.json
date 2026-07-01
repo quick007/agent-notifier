@@ -39,9 +39,12 @@
     "provenance": true
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
-    "pack:dry-run": "pnpm build && npm pack --dry-run --json",
-    "test": "pnpm build && node --test test/*.test.ts",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "build": "vp exec tsc -p tsconfig.build.json",
+    "pack:dry-run": "vp run build && npm pack --dry-run --json",
+    "test": "vp run build && node --test test/*.test.ts",
+    "typecheck": "vp exec tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "vite-plus": "catalog:"
   }
 }
