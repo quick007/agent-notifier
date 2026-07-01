@@ -1,6 +1,7 @@
 {
   "$schema": "../../node_modules/wrangler/config-schema.json",
   "name": "agent-notifier-web",
+  "account_id": "a95007cb065e2bfced646f55bfc5dd35",
   "main": "./worker/index.ts",
   "compatibility_date": "2026-07-01",
   "compatibility_flags": ["nodejs_compat"],

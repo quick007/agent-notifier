@@ -6,10 +6,12 @@ material locally, so publishing must be tokenless, reproducible, and narrow.
 
 ## Required Posture
 
-- Publish with npm trusted publishing from GitHub Actions OIDC.
-- Publish with provenance enabled.
+- Stage releases with npm trusted publishing from GitHub Actions OIDC.
+- Stage with provenance enabled, then require maintainer approval before the
+  package becomes public.
 - Do not use long-lived `NPM_TOKEN` secrets for package publish.
-- Require npm account 2FA and least-privilege package/org ownership.
+- Require npm account 2FA, disallow token publishing for public packages, and
+  use least-privilege package/org ownership.
 - Use package `files` allowlists; publish `dist`, `README.md`, and
   `package.json` only for runtime packages.
 - Build before every pack check and publish because `dist` is generated and
@@ -38,25 +40,37 @@ Publish order:
 2. Build CLI.
 3. Build MCP.
 4. Verify packed contents.
-5. Publish all public packages in one release batch or publish dependencies
-   before dependents with the same version.
+5. Stage all public packages in one release batch, then approve staged packages
+   only after review.
 
 The initial public package version is `0.1.0` across `@agent-notifier/protocol`,
 `@agent-notifier/crypto`, `@agent-notifier/cli`, and `@agent-notifier/mcp`.
 Release tags use the matching `v0.x.x` form. A pushed `v*.*.*` tag triggers the
-npm publish workflow; manual dispatch remains available for dry-run
+npm staging workflow; manual dispatch remains available for dry-run
 verification.
 Public package manifests use `https://github.com/quick007/agent-notifier` for
 repository, homepage, and issue tracker metadata.
 
-The publish workflow packs with pnpm, then publishes the generated tarballs with
-npm. This keeps pnpm's workspace dependency rewrite while using npm CLI OIDC and
-provenance support for registry publication.
+The release workflow packs with pnpm, then stages the generated tarballs with
+`npm stage publish`. This keeps pnpm's workspace dependency rewrite while using
+npm CLI OIDC and provenance support for registry staging. The manual workflow
+dispatch path builds, checks, packs, and runs `npm publish --dry-run` only; it
+does not receive OIDC permissions.
 
-The build/pack job does not receive OIDC. Only the publish job has
-`id-token: write`, downloads already-built tarballs, and runs `npm publish`.
+The build/pack job does not receive OIDC. Only the staging job has
+`id-token: write`, downloads already-built tarballs, and runs
+`npm stage publish`.
+Both jobs install `npm@11.18.0` before publish-related commands because staged
+publishing requires npm 11.15.0 or newer.
 The tag release job validates that every public package manifest version matches
 the pushed tag before packing.
+
+Staged publishing cannot create a brand-new npm package record. Before the first
+`v0.1.0` tag is pushed, each public package must already exist under the final
+scope and have trusted publishing configured. If npm cannot pre-create the
+package records through account settings, the bootstrap release needs a
+maintainer-approved one-time direct publish path; after that, switch trusted
+publisher permissions to stage-only and disallow traditional tokens.
 
 GitHub Actions are intentionally not SHA-pinned for the initial `0.x` release
 lane while the workflow is still changing. The deliberate exception is limited
@@ -126,6 +140,8 @@ Recent npm incidents show recurring patterns:
 Mitigations in this repo:
 
 - Trusted publishing/OIDC removes stored publish tokens.
+- Staged publishing requires maintainer approval with 2FA before staged
+  packages become publicly available.
 - Provenance ties packages to the release workflow.
 - `pull_request_target` must not run untrusted code.
 - Frozen installs and lockfile review reduce dependency confusion risk.
@@ -139,10 +155,17 @@ Mitigations in this repo:
 - Create or claim npm packages under the final scope and enable trusted
   publishing for `https://github.com/quick007/agent-notifier`,
   `.github/workflows/npm-publish.yml`, and the `npm-publish` environment.
+  Configure the trusted publisher allowed action as `npm stage publish` only,
+  not direct `npm publish`.
+- Confirm the package records already exist before relying on staged publishing.
+  Npm does not allow `npm stage publish` to create brand-new packages.
 - Protect the GitHub `npm-publish` environment with required reviewers.
+- Restrict npm package publishing access to require 2FA and disallow tokens.
 - Confirm package names, scope ownership, 2FA policy, and first public version.
 - Confirm repository, homepage, and bugs URLs in public package manifests before
   pushing `v0.1.0`.
+- After the tag workflow stages packages, review and approve each staged package
+  through npmjs.com or `npm stage approve` using maintainer 2FA.
 - Decide whether the documented SHA-pinning exception is acceptable for the
   first `0.x` tag.
 
@@ -152,6 +175,10 @@ Mitigations in this repo:
   https://docs.npmjs.com/trusted-publishers/
 - npm provenance:
   https://docs.npmjs.com/generating-provenance-statements/
+- npm staged publishing:
+  https://docs.npmjs.com/staged-publishing/
+- npm stage CLI:
+  https://docs.npmjs.com/cli/v11/commands/npm-stage/
 - pnpm publish and pack behavior:
   https://pnpm.io/cli/publish
 - pnpm approved build scripts:
