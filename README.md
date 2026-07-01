@@ -1,6 +1,9 @@
 # Agent Notifier
 
-THIS IS VERY WIP! USE AT YOUR OWN RISK!
+> [!WARNING]
+> THIS IS VERY WIP! USE AT YOUR OWN RISK!
+
+I had codex generate this project for me. Much of it is still incomplete/awaiting review. I would not trust this with sensitive data or daily workflows yet.
 
 Agent Notifier is an encrypted notification and lightweight approval product for
 AI agents.
