@@ -1,6 +1,7 @@
 import { CheckCircleIcon } from "@heroicons/react/24/outline";
 import { useNavigate } from "react-router-dom";
 
+import { NPM_PACKAGE } from "../lib/links";
 import { requestPushPermission } from "../lib/pwa";
 import type { Settings } from "../types";
 import { CopyBlock } from "./CopyBlock";
@@ -126,8 +127,7 @@ export function CodePanel({
 function SenderPreview({ senderDisplayName }: { senderDisplayName: string | undefined }) {
   return (
     <div className="mt-3 min-w-0 rounded-lg border border-neutral-200 px-3 py-2 dark:border-neutral-800">
-      <p className="text-xs font-medium uppercase text-neutral-500">Sender</p>
-      <p className="mt-1 break-words text-sm text-neutral-800 dark:text-neutral-200">
+      <p className="break-words text-sm text-neutral-800 dark:text-neutral-200">
         {senderDisplayName ?? "Waiting for sender details"}
       </p>
     </div>
@@ -141,7 +141,7 @@ export function CliQuickStart() {
       <p className="mt-1 text-sm leading-6 text-neutral-600 dark:text-neutral-300">
         Run setup from any shell and follow the on-screen pairing prompt.
       </p>
-      <CopyBlock className="mt-3" value="npx @agent-notifier/cli setup" />
+      <CopyBlock className="mt-3" value={`npx -y ${NPM_PACKAGE} setup`} />
     </div>
   );
 }

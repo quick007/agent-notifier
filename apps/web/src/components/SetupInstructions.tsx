@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { NPM_PACKAGE } from "../lib/links";
+import { MCP_NPM_PACKAGE, NPM_PACKAGE } from "../lib/links";
 import { CopyBlock } from "./CopyBlock";
 import { cn } from "./ui";
 
@@ -15,15 +15,15 @@ const mcpConfig = `{
   "mcpServers": {
     "agent-notifier": {
       "command": "npx",
-      "args": ["-y", "${NPM_PACKAGE.replace("/cli", "/mcp")}"]
+      "args": ["-y", "${MCP_NPM_PACKAGE}", "--stdio"]
     }
   }
 }`;
 
-const cliCommands = `npx ${NPM_PACKAGE} setup
-npx ${NPM_PACKAGE} notify --title "Done" --body "The task finished."`;
+const cliCommands = `npx -y ${NPM_PACKAGE} setup
+npx -y ${NPM_PACKAGE} notify --title "Done" --body "The task finished."`;
 
-type Tab = "agent" | "manual";
+type Tab = "agent" | "tools";
 
 export function SetupInstructions() {
   const [tab, setTab] = useState<Tab>("agent");
@@ -48,13 +48,13 @@ export function SetupInstructions() {
           <TabButton active={tab === "agent"} onClick={() => setTab("agent")}>
             Agent setup
           </TabButton>
-          <TabButton active={tab === "manual"} onClick={() => setTab("manual")}>
-            Manual
+          <TabButton active={tab === "tools"} onClick={() => setTab("tools")}>
+            MCP / CLI
           </TabButton>
         </div>
       </div>
 
-      <div className="mt-5">{tab === "agent" ? <AgentSetup /> : <ManualSetup />}</div>
+      <div className="mt-5">{tab === "agent" ? <AgentSetup /> : <ToolsSetup />}</div>
     </section>
   );
 }
@@ -85,7 +85,7 @@ function AgentSetup() {
   );
 }
 
-function ManualSetup() {
+function ToolsSetup() {
   return (
     <div className="grid gap-5">
       <div>
