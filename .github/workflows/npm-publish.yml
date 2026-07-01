@@ -4,16 +4,45 @@ on:
   push:
     tags:
       - "v*.*.*"
+  pull_request:
+    branches:
+      - main
+    types:
+      - closed
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
+  resolve-release:
+    if: github.event_name != 'pull_request' || github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    outputs:
+      release_enabled: ${{ steps.release.outputs.release_enabled }}
+      release_reason: ${{ steps.release.outputs.release_reason }}
+      release_type: ${{ steps.release.outputs.release_type }}
+      tag: ${{ steps.release.outputs.tag }}
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.merge_commit_sha || github.ref }}
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+      - name: Resolve npm release
+        id: release
+        run: node scripts/release/resolve-npm-release.mjs
+
   build-pack:
+    needs: resolve-release
+    if: needs.resolve-release.outputs.release_enabled == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.merge_commit_sha || github.ref }}
       - uses: voidzero-dev/setup-vp@v1
         with:
           node-version: "24"
@@ -24,10 +53,6 @@ jobs:
           registry-url: "https://registry.npmjs.org"
       - run: npm install -g npm@11.18.0
       - run: vp install
-      - name: Validate release tag
-        if: github.event_name == 'push'
-        run: |
-          node -e "const fs=require('node:fs'); const version=process.env.GITHUB_REF_NAME.replace(/^v/,''); for (const file of ['package.json','packages/protocol/package.json','packages/crypto/package.json','packages/cli/package.json','packages/mcp/package.json']) { const manifest=JSON.parse(fs.readFileSync(file,'utf8')); if (manifest.version !== version) throw new Error(`${file} version ${manifest.version} does not match tag v${version}`); }"
       - run: vp run -w check
       - name: Pack packages
         run: |
@@ -38,6 +63,18 @@ jobs:
             vp run "$package_name#build"
             vp pm pack --filter "$package_name" --json --pack-destination "$GITHUB_WORKSPACE/npm-artifacts"
           done
+      - name: Validate packed release versions
+        if: needs.resolve-release.outputs.release_enabled == 'true'
+        env:
+          RELEASE_VERSION: ${{ needs.resolve-release.outputs.version }}
+        run: |
+          set -euo pipefail
+          for artifact in npm-artifacts/*.tgz; do
+            case "$artifact" in
+              *-"$RELEASE_VERSION".tgz) ;;
+              *) echo "Artifact $artifact does not match v$RELEASE_VERSION"; exit 1 ;;
+            esac
+          done
       - name: Dry-run package publish
         if: github.event_name == 'workflow_dispatch'
         run: |
@@ -47,15 +84,17 @@ jobs:
             npm publish "$tgz" --access public --dry-run --ignore-scripts
           done
       - uses: actions/upload-artifact@v4
-        if: github.event_name == 'push'
+        if: needs.resolve-release.outputs.release_enabled == 'true'
         with:
           name: npm-artifacts
           path: npm-artifacts/*.tgz
           retention-days: 7
 
   stage:
-    needs: build-pack
-    if: github.event_name == 'push'
+    needs:
+      - resolve-release
+      - build-pack
+    if: needs.resolve-release.outputs.release_enabled == 'true'
     runs-on: ubuntu-latest
     environment: npm-publish
     permissions:
@@ -72,13 +111,14 @@ jobs:
           name: npm-artifacts
           path: npm-artifacts
       - name: Stage packages
+        env:
+          RELEASE_VERSION: ${{ needs.resolve-release.outputs.version }}
         run: |
           set -euo pipefail
-          version="${GITHUB_REF_NAME#v}"
           for artifact in npm-artifacts/*.tgz; do
             case "$artifact" in
-              *-"$version".tgz) ;;
-              *) echo "Artifact $artifact does not match tag v$version"; exit 1 ;;
+              *-"$RELEASE_VERSION".tgz) ;;
+              *) echo "Artifact $artifact does not match v$RELEASE_VERSION"; exit 1 ;;
             esac
           done
           for package_name in agent-notifier-protocol agent-notifier-crypto agent-notifier-cli agent-notifier-mcp; do

@@ -26,6 +26,14 @@ import {
   startCodePairing,
   startEmailPairing,
 } from "../services/pairing-service";
+import {
+  clientIpFromHeaders,
+  enforceRateLimits,
+  normalizedEmailForRateLimit,
+  RATE_LIMIT_POLICIES,
+  senderPublicKeyFingerprint,
+  visiblePairingCodeFingerprint,
+} from "../services/rate-limit-service";
 
 const params = z.object({ sessionId: PairingSessionId });
 const secretQuery = z.object({ secret: z.string().optional() });
@@ -39,14 +47,30 @@ export function registerPairingRoutes<S extends Schema, BasePath extends string>
       operationId: "startEmailPairing",
       request: { body: jsonRequest(PairingEmailStartRequestSchema) },
       responses: { 202: jsonContent(PairingSessionResponseSchema, "Pairing email queued."), ...errorResponses },
-    }), async (c) => c.json(await startEmailPairing(c.env, c.req.valid("json"), new URL(c.req.url).origin), 202))
+    }), async (c) => {
+      const body = c.req.valid("json");
+      await enforceRateLimits(c.env, [
+        { policy: RATE_LIMIT_POLICIES.pairingEmailStartByEmail, scopeId: normalizedEmailForRateLimit(body.email) },
+        { policy: RATE_LIMIT_POLICIES.pairingEmailStartByIp, scopeId: clientIpFromHeaders(c.req.raw.headers) },
+        {
+          policy: RATE_LIMIT_POLICIES.pairingEmailStartBySenderPublicKey,
+          scopeId: await senderPublicKeyFingerprint(body.sender),
+        },
+      ]);
+      return c.json(await startEmailPairing(c.env, body, new URL(c.req.url).origin), 202);
+    })
     .openapi(createRoute({
       method: "post",
       path: "/api/pairing/code/start",
       tags: ["Pairing"],
       operationId: "startCodePairing",
       responses: { 201: jsonContent(CodePairingStartResponseSchema, "Pairing code created."), ...errorResponses },
-    }), async (c) => c.json(await startCodePairing(c.env), 201))
+    }), async (c) => {
+      await enforceRateLimits(c.env, [
+        { policy: RATE_LIMIT_POLICIES.pairingCodeStartByIp, scopeId: clientIpFromHeaders(c.req.raw.headers) },
+      ]);
+      return c.json(await startCodePairing(c.env), 201);
+    })
     .openapi(createRoute({
       method: "post",
       path: "/api/pairing/code/claim",
@@ -56,6 +80,10 @@ export function registerPairingRoutes<S extends Schema, BasePath extends string>
       responses: { 200: jsonContent(PairingSessionResponseSchema, "Pairing claimed."), ...errorResponses },
     }), async (c) => {
       const body = c.req.valid("json");
+      await enforceRateLimits(c.env, [
+        { policy: RATE_LIMIT_POLICIES.pairingCodeClaimByIp, scopeId: clientIpFromHeaders(c.req.raw.headers) },
+        { policy: RATE_LIMIT_POLICIES.pairingCodeClaimByCode, scopeId: await visiblePairingCodeFingerprint(body.code) },
+      ]);
       return c.json(await claimCodePairing(c.env, body.code, body.secret, body.sender), 200);
     })
     .openapi(createRoute({

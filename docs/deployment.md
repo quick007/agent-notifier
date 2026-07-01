@@ -161,9 +161,11 @@ reporting are tested on real browser devices.
 
 ## Packages
 
-Package CI and tag-driven npm publish workflow files exist under
-`.github/workflows`. Manual dispatch is for dry-run verification.
-`vp run -w check:packages` builds and dry-runs publishable packages.
+Package CI and npm publish workflow files exist under `.github/workflows`.
+Normal pushes to `main` are CI-only. Npm staging can be driven by a matching
+`v*.*.*` tag or by a merged PR with exactly one release label. Manual dispatch
+is for dry-run verification. `vp run -w check:packages` builds and dry-runs
+publishable packages.
 
 Do not claim npm publication, trusted publisher setup, provenance, or install
 readiness until a real release succeeds. The `@agent-notifier` npm scope exists,
@@ -222,5 +224,6 @@ Before any production-ready or public-package claim, verify:
 - npm package records no longer return E404
 - npm package bootstrap and trusted publisher setup complete after
   user-present npm 2FA verification
+- exactly one release label is present on merged PR package releases
 - npm trusted publishing/provenance release if packages are public
 - Codex plugin install through the published MCP package

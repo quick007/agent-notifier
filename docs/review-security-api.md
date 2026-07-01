@@ -6,13 +6,20 @@ Scope: server/API/D1/Resend/Web Push/protocol boundaries, with the course correc
 
 ## Findings
 
-### P1 - Remaining: Rate limits are modeled but not enforced
+### P1 - Fixed: Metadata rate limits now protect setup and sends
 
-The product spec requires server-side metadata rate limits for sender, recipient, IP/install fingerprint, email pairing, and pairing-code claim flows (`docs/product-spec.md:641`). The schema has `rateLimitBuckets` (`apps/web/src/db/schema.ts:158`) and pairing sessions track `attemptCount` (`apps/web/src/db/schema.ts:82`), but current service code only increments `attemptCount` after a matching code claim (`apps/web/src/server/services/pairing-service.ts:96`) and no API route calls a rate-limit helper before email start, code start/claim, or sender message creation.
+The product spec requires server-side metadata rate limits for sender, recipient, IP/install fingerprint, email pairing, and pairing-code claim flows (`docs/product-spec.md:641`). The schema's `rateLimitBuckets` table (`apps/web/src/db/schema.ts:158`) is now used by a small Drizzle-backed helper before expensive setup and send side effects.
 
-Impact: online pairing-code guessing, setup email abuse, and sender spam are not bounded by the server yet.
+Implemented fixed-window limits:
 
-Recommendation: add a small Drizzle-backed metadata rate-limit helper and apply it in Hono middleware/service entry points before expensive side effects.
+- `POST /api/pairing/email/start`: 3 attempts per normalized email per hour, 10 attempts per client IP per hour, and 5 attempts per sender public-key fingerprint per hour. The sender-key bucket stores a SHA-256 base64url fingerprint of the sender encryption and signing public keys, not raw key material.
+- `POST /api/pairing/code/start`: 10 attempts per client IP per 10 minutes.
+- `POST /api/pairing/code/claim`: 30 attempts per client IP per 10 minutes, and 5 attempts per visible code fingerprint per 10 minutes. The code bucket stores a SHA-256 base64url fingerprint of the normalized visible code, not the raw code.
+- `POST /api/senders/messages`: 60 messages per sender per minute, and 300 messages per recipient per minute, enforced after signed sender authentication and cheap scope checks but before message insertion, delivery events, key wraps, or push wakeups.
+
+Rate-limit consumption is a single Drizzle insert/upsert per bucket. New windows insert count `1`; existing windows atomically increment `count = count + 1` only while `count < maxAttempts`. A zero-row conditional update is treated as rate-limited, so concurrent requests cannot overwrite each other with a stale `bucket.count + 1`.
+
+Rate-limit failures return `AppError(429, "rate_limited", ..., retryAfterSeconds)`, and the shared OpenAPI error responses now include 429. Rate-limit buckets are pruned after 2 days by the retention sweep. Remaining scope: there is no separate installation-fingerprint bucket beyond the client IP metadata header path (`CF-Connecting-IP`, then the first `X-Forwarded-For` value, then `unknown`).
 
 ### P1 - Fixed: Hono validation could accept plaintext unknown fields
 
@@ -57,6 +64,8 @@ Fix: `apps/web/src/db/schema.ts:3` now imports `DeliveryState`, `MessageMode`, `
 
 ## Changes Made
 
+- Added atomic Drizzle-backed metadata rate limits for setup email starts, code starts, code claims, and sender message creation.
+- Added setup-email sender public-key fingerprint rate limiting and retention pruning for old rate-limit buckets.
 - Added `plaintextJsonGuard` and wired it before `/api/*` Hono validation.
 - Preserved sender-signed/AAD `metadata.createdAt` through Hono validation and message persistence.
 - Moved signed request header names into `@agent-notifier/protocol` and reused them from server/OpenAPI/CLI paths.
@@ -68,6 +77,9 @@ Fix: `apps/web/src/db/schema.ts:3` now imports `DeliveryState`, `MessageMode`, `
 
 ## Checks
 
+- `vp run @agent-notifier/web#test` - pass, 10 files / 29 tests
+- `vp run @agent-notifier/web#typecheck` - pass
+- `vp run -w check:file-length` - pass
 - `pnpm --filter @agent-notifier/protocol test` - pass, 10 tests
 - `pnpm --filter @agent-notifier/web typecheck` - pass
 - `pnpm --filter @agent-notifier/web test` - pass, 4 files / 16 tests

@@ -24,6 +24,7 @@ import {
   messageStatus,
   senderTargets,
 } from "../services/message-service";
+import { enforceRateLimits, RATE_LIMIT_POLICIES } from "../services/rate-limit-service";
 
 const messageParams = z.object({ messageId: MessageId });
 
@@ -56,6 +57,13 @@ export function registerSenderRoutes<S extends Schema, BasePath extends string>(
       if (message.senderId !== auth.senderId) {
         return c.json({ error: "scope_mismatch", message: "Sender ID mismatch." }, 403);
       }
+      if (message.recipientId !== auth.recipientId) {
+        return c.json({ error: "scope_mismatch", message: "Recipient ID mismatch." }, 403);
+      }
+      await enforceRateLimits(c.env, [
+        { policy: RATE_LIMIT_POLICIES.senderMessagesBySender, scopeId: auth.senderId },
+        { policy: RATE_LIMIT_POLICIES.senderMessagesByRecipient, scopeId: auth.recipientId },
+      ]);
       return c.json(await createMessage(c.env, c.executionCtx, message), 202);
     })
     .openapi(createRoute({

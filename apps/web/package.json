@@ -15,7 +15,6 @@
     "typecheck": "vp exec tsc --noEmit",
     "test": "vp exec vitest run --config vitest.config.ts --passWithNoTests",
     "cf-typegen": "vp exec wrangler types",
-    "wrangler:check": "vp exec wrangler check",
     "deploy:dry-run": "vp build && vp exec wrangler deploy --dry-run --config dist/agent_notifier_web/wrangler.json",
     "deploy": "vp build && vp exec wrangler deploy --config dist/agent_notifier_web/wrangler.json",
     "d1:migrate:local": "vp exec wrangler d1 migrations apply agent-notifier --local --config wrangler.jsonc",

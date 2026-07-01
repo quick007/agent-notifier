@@ -111,5 +111,6 @@ export const errorResponses = {
   403: jsonContent(ErrorSchema, "Authenticated subject is not allowed."),
   404: jsonContent(ErrorSchema, "Resource not found."),
   409: jsonContent(ErrorSchema, "Resource conflict."),
+  429: jsonContent(ErrorSchema, "Rate limit exceeded."),
   500: jsonContent(ErrorSchema, "Unexpected server error."),
 } satisfies RouteConfig["responses"];

@@ -1,11 +1,11 @@
 # CLI and Local MCP
 
-Status: local runtime with live Worker setup/status and encrypted send support.
-The Worker API contract belongs to Hono/OpenAPIHono routes, with the
-Hono-derived OpenAPI document at `/openapi.json` and Scalar docs at `/docs`.
-CLI/MCP can call live pairing endpoints when an API URL is configured, fetch
-sender-authorized target device keys, encrypt locally, and submit only signed
-encrypted envelopes.
+Status: local runtime with live Worker setup/status, encrypted send support,
+and encrypted response fetch/decryption for responded messages. The Worker API
+contract belongs to Hono/OpenAPIHono routes, with the Hono-derived OpenAPI
+document at `/openapi.json` and Scalar docs at `/docs`. CLI/MCP can call live
+pairing endpoints when an API URL is configured, fetch sender-authorized target
+device keys, encrypt locally, and submit only signed encrypted envelopes.
 
 ## CLI Commands
 
@@ -103,5 +103,9 @@ Live setup consumes `/api/pairing/email/start` and `/api/pairing/code/claim`.
 `status pair_...` can persist server-assigned `senderId` and `recipientId`.
 Live notify/reply/approval signs `/api/senders/targets`, builds E2EE key wraps
 for every active device, signs the canonical envelope, and posts
-`/api/senders/messages`. Response fetch/decryption remains deferred; status and
-events are live once the sender is paired.
+`/api/senders/messages`. When status or wait polling sees `responded`, the
+runtime fetches `/api/senders/messages/:messageId/response`, verifies the
+device signature, decrypts the reply or approval with the local sender
+encryption key, and returns `responseRef` plus the decrypted `response` JSON.
+If the response endpoint is not fetchable or decryptable yet, the status still
+returns `responded` with a warning.

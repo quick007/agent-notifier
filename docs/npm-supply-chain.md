@@ -45,9 +45,29 @@ Publish order:
 
 The initial public package version is `0.1.0` across `@agent-notifier/protocol`,
 `@agent-notifier/crypto`, `@agent-notifier/cli`, and `@agent-notifier/mcp`.
-Release tags use the matching `v0.x.x` form. A pushed `v*.*.*` tag triggers the
-npm staging workflow; manual dispatch remains available for dry-run
-verification.
+Every public package manifest and the root manifest must carry the same release
+version before staging. Release tags use the matching `v0.x.x` form. A pushed
+`v*.*.*` tag triggers the npm staging workflow; manual dispatch remains
+available for dry-run verification.
+
+## Release Labels
+
+Merged pull requests to `main` may also drive npm staging when they have exactly
+one release label:
+
+| Label           | Meaning                                                                 |
+| --------------- | ----------------------------------------------------------------------- |
+| `release:none`  | Merge without staging npm packages. Use for docs, tests, and CI-only work. |
+| `release:patch` | Stage the manifest version as a patch release. Use for fixes and polish. |
+| `release:minor` | Stage the manifest version as a minor release. Use for new capabilities. |
+| `release:major` | Stage the manifest version as a major release. Use for breaking changes. |
+
+The PR label authorizes staging; CI does not bump package manifests. For a PR
+release, update the root and public package manifest versions in the merged
+commit before applying a non-`none` release label. The resolver fails if a
+merged PR has zero or multiple release labels, if public package versions drift,
+or if a tag does not match the manifest version.
+
 Public package manifests use `https://github.com/quick007/agent-notifier` for
 repository, homepage, and issue tracker metadata.
 
@@ -60,17 +80,25 @@ user-present npm two-factor security-key/password verification.
 The release workflow installs and checks through Vite+, then packs with
 `vp pm pack` and stages the generated tarballs with `npm stage publish`. This
 keeps pnpm's workspace dependency rewrite while using npm CLI OIDC and
-provenance support for registry staging. The manual workflow dispatch path
-builds, checks, packs, and runs `npm publish --dry-run` only; it does not
-receive OIDC permissions.
+provenance support for registry staging. The tag path and merged-PR path both
+stage through the protected `npm-publish` GitHub Environment. The manual
+workflow dispatch path builds, checks, packs, and runs `npm publish --dry-run`
+only; it does not receive OIDC permissions.
 
 The build/pack job does not receive OIDC. Only the staging job has
 `id-token: write`, downloads already-built tarballs, and runs
 `npm stage publish`.
 Both jobs install `npm@11.18.0` before publish-related commands because staged
 publishing requires npm 11.15.0 or newer.
-The tag release job validates that every public package manifest version matches
-the pushed tag before packing.
+Normal pushes to `main` remain CI-only through `package-ci.yml`; the npm publish
+workflow listens only for release tags, merged pull request close events, and
+manual dry-run dispatches. For merged pull requests, the workflow checks out the
+trusted merged commit on `main`, not the PR head.
+
+The PR staging path intentionally does not create a GitHub tag or GitHub
+Release. Staged packages are still pending maintainer approval in npm, and the
+existing `v*.*.*` tag path remains the deliberate way to create a permanent
+source marker for a package version after maintainers decide to use one.
 
 Staged publishing cannot create a brand-new npm package record. Before the first
 `v0.1.0` tag is pushed, each public package must already exist under the final
@@ -173,8 +201,8 @@ Mitigations in this repo:
 - Confirm package names, scope ownership, 2FA policy, and first public version.
 - Confirm repository, homepage, and bugs URLs in public package manifests before
   pushing `v0.1.0`.
-- After the tag workflow stages packages, review and approve each staged package
-  through npmjs.com or `npm stage approve` using maintainer 2FA.
+- After the tag or merged-PR workflow stages packages, review and approve each
+  staged package through npmjs.com or `npm stage approve` using maintainer 2FA.
 - Decide whether the documented SHA-pinning exception is acceptable for the
   first `0.x` tag.
 

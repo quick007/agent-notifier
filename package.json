@@ -31,7 +31,7 @@
     "dev": "vp run @agent-notifier/web#dev",
     "build": "vp run --filter @agent-notifier/* build",
     "typecheck": "vp run --filter @agent-notifier/* typecheck",
-    "test": "vp run --filter @agent-notifier/* test",
+    "test": "vp run --filter @agent-notifier/* test && node --test scripts/release/*.test.mjs",
     "check:file-length": "vp exec tsx scripts/check-file-length.ts",
     "check:packages": "node scripts/verify-packages.mjs",
     "check": "vp run -w typecheck && vp run -w test && vp run -w check:file-length && vp run -w check:packages",

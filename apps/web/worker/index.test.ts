@@ -62,6 +62,7 @@ describe("worker", () => {
     expect(body.paths["/api/senders/messages"]?.post?.operationId).toBe("createMessage");
     expect(body.paths["/api/senders/targets"]?.get?.operationId).toBe("getSenderTargets");
     expect(body.paths["/api/devices/messages/{messageId}/respond"]?.post?.operationId).toBe("submitMessageResponse");
+    expect(body.paths["/api/pairing/email/start"]?.post?.responses?.["429"]).toBeDefined();
     expect(body.components.securitySchemes.senderSignedRequest?.name).toBe(SIGNED_REQUEST_HEADERS.signature);
     expect(body.components.securitySchemes.deviceSignedRequest?.name).toBe(SIGNED_REQUEST_HEADERS.signature);
     expect(body.paths["/api/senders/messages"]?.post?.security).toEqual([{ senderSignedRequest: [] }]);
@@ -142,6 +143,7 @@ type OpenApiTestDocument = {
   readonly servers: Array<{ readonly url: string }>;
   readonly paths: Record<string, Record<string, {
     readonly operationId: string;
+    readonly responses?: Record<string, unknown>;
     readonly security?: Array<Record<string, string[]>>;
   }>>;
   readonly components: {
