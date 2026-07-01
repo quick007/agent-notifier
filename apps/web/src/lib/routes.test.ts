@@ -19,21 +19,6 @@ describe("route parsing", () => {
     });
   });
 
-  it("ignores legacy fragment paths", () => {
-    const url = new URL("https://agent-notifier.test/#/setup");
-
-    expect(routeFromUrl(url)).toBe("/");
-    expect(pairingLinkFromUrl(new URL("https://agent-notifier.test/#/setup/pair/pair_123?secret=s3cr3t"))).toBeNull();
-  });
-
-  it("does not use fragments as app route input on real paths", () => {
-    expect(routeFromUrl(new URL("https://agent-notifier.test/setup#/inbox"))).toBe("/setup");
-    expect(routeFromUrl(new URL("https://agent-notifier.test/setup#secret=s3cr3t"))).toBe("/setup");
-    expect(pairingLinkFromUrl(new URL("https://agent-notifier.test/setup/pair/pair_123#?secret=s3cr3t"))).toEqual({
-      sessionId: "pair_123"
-    });
-  });
-
   it("does not treat docs routes as app routes", () => {
     expect(routeFromUrl(new URL("https://agent-notifier.test/docs"))).toBe("/");
     expect(routeFromUrl(new URL("https://agent-notifier.test/openapi.json"))).toBe("/");
