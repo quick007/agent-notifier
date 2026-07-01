@@ -4,6 +4,7 @@ import {
   NoSymbolIcon,
   SparklesIcon
 } from "@heroicons/react/24/outline";
+import { Link } from "react-router-dom";
 
 import type { PreviewPolicy, Sender } from "../types";
 import { Badge, Button, ConfirmDialog, Toggle, cn } from "../components/ui";
@@ -43,9 +44,9 @@ export function SendersScreen({
       ) : (
         <div className="mt-5 divide-y divide-neutral-200 overflow-hidden rounded-2xl border border-neutral-200 bg-white dark:divide-neutral-900 dark:border-neutral-900 dark:bg-neutral-950">
           {senders.map((sender) => (
-            <a
+            <Link
               className="flex min-h-20 items-center gap-3 px-4 py-3 transition hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-600 dark:hover:bg-neutral-900"
-              href={`#/senders/${sender.id}`}
+              to={`/senders/${sender.id}`}
               key={sender.id}
             >
               <SenderIcon kind={sender.kind} />
@@ -56,7 +57,7 @@ export function SendersScreen({
                 </p>
               </div>
               {sender.revokedAt ? <Badge tone="red">Revoked</Badge> : <Badge tone="green">Active</Badge>}
-            </a>
+            </Link>
           ))}
         </div>
       )}
@@ -75,9 +76,9 @@ function SenderDetail({
 }) {
   return (
     <section className="an-rise mx-auto w-full max-w-2xl px-4 py-5 md:px-8 md:py-8">
-      <a className="inline-flex text-sm text-neutral-500 transition hover:text-neutral-950 dark:hover:text-neutral-50" href="#/senders">
+      <Link className="inline-flex text-sm text-neutral-500 transition hover:text-neutral-950 dark:hover:text-neutral-50" to="/senders">
         Back to senders
-      </a>
+      </Link>
       <div className="mt-5 flex items-start gap-3">
         <SenderIcon kind={sender.kind} />
         <div className="min-w-0 flex-1">

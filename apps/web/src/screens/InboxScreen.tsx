@@ -1,5 +1,6 @@
 import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 
 import { pendingMessage } from "../lib/format";
 import type { AppState, Message } from "../types";
@@ -47,13 +48,13 @@ export function InboxScreen({
         </div>
 
         {!savedOnly && state.settings.pushState === "paired_no_push" && (
-          <a
+          <Link
             className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-900 transition hover:bg-amber-100 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-100 dark:hover:bg-amber-900/60"
-            href="#/settings/notifications"
+            to="/settings/notifications"
           >
             <span>Notifications are off. Messages arrive when you open the app.</span>
             <span className="shrink-0 font-medium underline-offset-2 group-hover:underline">Turn on</span>
-          </a>
+          </Link>
         )}
 
         <div className="mt-5 flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-3 transition focus-within:ring-2 focus-within:ring-blue-600 dark:border-neutral-800 dark:bg-neutral-900 dark:focus-within:ring-blue-400">

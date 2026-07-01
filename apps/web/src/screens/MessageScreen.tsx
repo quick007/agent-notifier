@@ -1,4 +1,5 @@
-import { navigate } from "../lib/routes";
+import { useNavigate } from "react-router-dom";
+
 import type { AppState } from "../types";
 import { MessageDetail } from "../components/MessageDetail";
 import { Button } from "../components/ui";
@@ -22,6 +23,7 @@ export function MessageScreen({
   onReply: (messageId: string, text: string) => void;
   onToggleSave: (messageId: string) => void;
 }) {
+  const navigate = useNavigate();
   const message = state.messages.find((item) => item.id === messageId);
 
   if (!message || message.deleted) {

@@ -6,10 +6,12 @@ import {
   InboxIcon
 } from "@heroicons/react/24/outline";
 import type { ReactNode } from "react";
+import { Link } from "react-router-dom";
 
+import { DOCS_URL, GITHUB_URL } from "../lib/links";
 import { href } from "../lib/routes";
 import type { Route } from "../types";
-import { Wordmark } from "./Brand";
+import { GitHubIcon, Wordmark } from "./Brand";
 import { cn } from "./ui";
 
 const navItems: Array<{
@@ -48,12 +50,21 @@ export function AppShell({
           </p>
           <a
             className="mt-3 flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-950 focus:outline-none focus:ring-2 focus:ring-blue-600 dark:text-neutral-400 dark:hover:bg-neutral-900 dark:hover:text-neutral-50 dark:focus:ring-blue-400"
-            href="/docs"
+            href={DOCS_URL}
             rel="noreferrer"
             target="_blank"
           >
             <CodeBracketIcon className="h-4 w-4" />
             <span>API reference</span>
+          </a>
+          <a
+            className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-950 focus:outline-none focus:ring-2 focus:ring-blue-600 dark:text-neutral-400 dark:hover:bg-neutral-900 dark:hover:text-neutral-50 dark:focus:ring-blue-400"
+            href={GITHUB_URL}
+            rel="noreferrer"
+            target="_blank"
+          >
+            <GitHubIcon className="h-4 w-4" />
+            <span>GitHub</span>
           </a>
         </aside>
 
@@ -89,18 +100,18 @@ function NavLink({
   const Icon = item.icon;
 
   return (
-    <a
+    <Link
       className={cn(
         "flex min-h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 dark:focus:ring-blue-400 dark:focus:ring-offset-neutral-950",
         active
           ? "bg-neutral-950 text-white dark:bg-neutral-50 dark:text-neutral-950"
           : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-950 dark:text-neutral-400 dark:hover:bg-neutral-900 dark:hover:text-neutral-50"
       )}
-      href={href(item.route)}
+      to={href(item.route)}
     >
       <Icon className="h-5 w-5" />
       <span>{item.label}</span>
-    </a>
+    </Link>
   );
 }
 
@@ -115,17 +126,17 @@ function MobileNavLink({
   const Icon = item.icon;
 
   return (
-    <a
+    <Link
       className={cn(
         "flex min-h-12 flex-col items-center justify-center gap-1 rounded-lg text-xs font-medium transition focus:outline-none focus:ring-2 focus:ring-blue-600",
         active
           ? "text-blue-600 dark:text-blue-400"
           : "text-neutral-500 dark:text-neutral-400"
       )}
-      href={href(item.route)}
+      to={href(item.route)}
     >
       <Icon aria-hidden="true" className="h-5 w-5" />
       <span>{item.label}</span>
-    </a>
+    </Link>
   );
 }

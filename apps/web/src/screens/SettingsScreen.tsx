@@ -5,7 +5,9 @@ import {
   EnvelopeIcon,
   ShieldCheckIcon
 } from "@heroicons/react/24/outline";
+import { Link } from "react-router-dom";
 
+import { DOCS_URL } from "../lib/links";
 import { getPwaStatus, requestPushPermission, sendTestNotification } from "../lib/pwa";
 import type { PreviewPolicy, PushState, Settings } from "../types";
 import { Badge, Button } from "../components/ui";
@@ -44,7 +46,7 @@ export function SettingsScreen({
       </p>
 
       <div className="mt-6 divide-y divide-neutral-200 overflow-hidden rounded-2xl border border-neutral-200 bg-white dark:divide-neutral-900 dark:border-neutral-900 dark:bg-neutral-950">
-        <a className="flex min-h-16 items-center gap-3 px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-900" href="#/settings/notifications">
+        <Link className="flex min-h-16 items-center gap-3 px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-900" to="/settings/notifications">
           <BellAlertIcon className="h-5 w-5 text-neutral-500" />
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium">Notifications</p>
@@ -53,7 +55,7 @@ export function SettingsScreen({
           <Badge tone={settings.pushState === "granted" ? "green" : "amber"}>
             {settings.pushState === "granted" ? "On" : "Check"}
           </Badge>
-        </a>
+        </Link>
 
         <SelectRow
           label="Preview policy"
@@ -89,13 +91,13 @@ export function SettingsScreen({
           icon={<ShieldCheckIcon />}
           label="Legal"
           value="Privacy, Security, and Terms"
-          href="#/privacy"
+          to="/privacy"
         />
         <InfoRow
           icon={<CodeBracketIcon />}
           label="Developers"
           value="CLI, MCP, and API reference"
-          href="/docs"
+          href={DOCS_URL}
           external
         />
       </div>
@@ -128,9 +130,9 @@ export function PushTroubleshootingScreen({
 
   return (
     <section className="an-rise mx-auto w-full max-w-2xl px-4 py-5 md:px-8 md:py-8">
-      <a className="inline-flex text-sm text-neutral-500 transition hover:text-neutral-950 dark:hover:text-neutral-50" href="#/settings">
+      <Link className="inline-flex text-sm text-neutral-500 transition hover:text-neutral-950 dark:hover:text-neutral-50" to="/settings">
         Back to settings
-      </a>
+      </Link>
       <h1 className="mt-5 text-xl font-semibold tracking-tight">Push troubleshooting</h1>
       <p className="mt-2 text-sm leading-6 text-neutral-500 dark:text-neutral-400">
         Current status: <span className="font-medium">{pushLabel(settings.pushState)}</span>
@@ -186,16 +188,20 @@ function SelectRow({
 function InfoRow({
   external,
   href,
+  to,
   icon,
   label,
   value
 }: {
   external?: boolean;
   href?: string;
+  to?: string;
   icon: React.ReactElement;
   label: string;
   value: string;
 }) {
+  const rowClass =
+    "flex min-h-16 items-center gap-3 px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-900";
   const content = (
     <>
       <span className="h-5 w-5 shrink-0 text-neutral-500">{icon}</span>
@@ -206,10 +212,18 @@ function InfoRow({
     </>
   );
 
+  if (to) {
+    return (
+      <Link className={rowClass} to={to}>
+        {content}
+      </Link>
+    );
+  }
+
   if (href) {
     return (
       <a
-        className="flex min-h-16 items-center gap-3 px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-900"
+        className={rowClass}
         href={href}
         {...(external ? { target: "_blank", rel: "noreferrer" } : {})}
       >

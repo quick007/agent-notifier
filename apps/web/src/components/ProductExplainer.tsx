@@ -8,6 +8,8 @@ import {
 } from "@heroicons/react/24/outline";
 import type { ReactElement } from "react";
 
+import { DOCS_URL } from "../lib/links";
+
 const modes: Array<{ icon: ReactElement; title: string; body: string }> = [
   {
     icon: <BellIcon />,
@@ -90,7 +92,7 @@ export function DeveloperCallout() {
   return (
     <a
       className="group flex items-center gap-3 rounded-2xl border border-neutral-200 bg-white p-4 transition hover:border-neutral-300 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-blue-600 dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-neutral-700 dark:hover:bg-neutral-800 dark:focus:ring-blue-400"
-      href="/docs"
+      href={DOCS_URL}
       rel="noreferrer"
       target="_blank"
     >

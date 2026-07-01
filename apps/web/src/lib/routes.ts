@@ -1,42 +1,11 @@
-import { useEffect, useState } from "react";
-
 import type { Route } from "../types";
 
-export function currentRoute(): Route {
-  return routeFromUrl(new URL(window.location.href));
-}
-
-export function navigate(route: Route) {
-  window.location.hash = route;
-}
-
-export function useRoute() {
-  const [route, setRoute] = useState<Route>(() => currentRoute());
-
-  useEffect(() => {
-    const onHashChange = () => setRoute(currentRoute());
-    const onPopState = () => setRoute(currentRoute());
-    window.addEventListener("hashchange", onHashChange);
-    window.addEventListener("popstate", onPopState);
-    return () => {
-      window.removeEventListener("hashchange", onHashChange);
-      window.removeEventListener("popstate", onPopState);
-    };
-  }, []);
-
-  return route;
-}
-
-export function messageIdFromRoute(route: Route) {
-  return route.startsWith("/message/") ? route.slice("/message/".length) : null;
-}
-
-export function senderIdFromRoute(route: Route) {
-  return route.startsWith("/senders/") ? route.slice("/senders/".length) : null;
-}
-
+/**
+ * App links use real, history-API paths. React Router owns navigation, so this
+ * is just the canonical string form of a route.
+ */
 export function href(route: Route) {
-  return `#${route}`;
+  return route;
 }
 
 export type PairingLink = {
@@ -49,23 +18,11 @@ export function pairingLinkFromCurrentLocation(): PairingLink | null {
 }
 
 export function routeFromUrl(url: URL): Route {
-  const hashRoute = routeFromHash(url.hash);
-  if (hashRoute) return hashRoute;
   return routeFromPath(url.pathname);
 }
 
 export function pairingLinkFromUrl(url: URL): PairingLink | null {
-  const hash = url.hash.replace(/^#/, "");
-  const hashPairing = hash ? pairingLinkFromRouteText(hash) : null;
-  if (hashPairing) return hashPairing;
-
   return pairingLinkFromRouteText(`${url.pathname}${url.search}`);
-}
-
-function routeFromHash(hash: string): Route | null {
-  const text = hash.replace(/^#/, "");
-  if (!text.startsWith("/")) return null;
-  return routeFromText(text);
 }
 
 function routeFromPath(pathname: string): Route {

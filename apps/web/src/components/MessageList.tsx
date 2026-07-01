@@ -1,4 +1,5 @@
 import { BookmarkIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { Link } from "react-router-dom";
 
 import { modeLabel, pendingMessage, relativeTime, senderName, shouldHidePreview } from "../lib/format";
 import { href } from "../lib/routes";
@@ -59,9 +60,9 @@ export function MessageList({
 
         return (
           <article key={message.id} className="group relative">
-            <a
+            <Link
               className="grid min-h-[5.75rem] grid-cols-[2.5rem_minmax(0,1fr)] gap-3 px-4 py-3.5 transition hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-600 dark:hover:bg-neutral-900/60 dark:focus:ring-blue-400"
-              href={href(`/message/${message.id}`)}
+              to={href(`/message/${message.id}`)}
             >
               <div className="mt-0.5">
                 <ModeIcon message={message} size="sm" />
@@ -83,7 +84,7 @@ export function MessageList({
                   {modeLabel(message.mode)} &middot; {relativeTime(message.createdAt)}
                 </p>
               </div>
-            </a>
+            </Link>
             <div className="absolute right-3 top-3 hidden gap-1 rounded-lg bg-white/95 shadow-sm ring-1 ring-neutral-200 group-hover:flex group-focus-within:flex dark:bg-neutral-950/95 dark:ring-neutral-800">
               <IconButton
                 label={message.saved ? "Unsave message" : "Save message"}

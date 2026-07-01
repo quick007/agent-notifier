@@ -1,7 +1,7 @@
 import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useMemo, useState } from "react";
 
-import { defaultState, pairedDemoState } from "../data/seed";
+import { defaultState, pairedState } from "../data/seed";
 import type { PairingLink } from "../lib/routes";
 import { readStoredState, writeStoredState } from "../lib/storage";
 import type { AppState, Message, PreviewPolicy, PushState, Sender } from "../types";
@@ -35,7 +35,7 @@ export function useAppState() {
           pairing: {
             status: "code_ready",
             kind: "code",
-            code: "M7KQ-4P2D",
+            code: generatePairingCode(),
             expiresAt: new Date(Date.now() + 10 * 60_000).toISOString()
           }
         });
@@ -66,7 +66,7 @@ export function useAppState() {
         });
       },
       approvePairing() {
-        setState(pairedDemoState());
+        setState((current) => pairedState(current));
       },
       setPushState(pushState: PushState) {
         updateSettings(setState, { pushState });
@@ -123,6 +123,15 @@ export function useAppState() {
   );
 
   return api;
+}
+
+const codeAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+
+function generatePairingCode(): string {
+  const bytes = new Uint8Array(8);
+  crypto.getRandomValues(bytes);
+  const chars = Array.from(bytes, (byte) => codeAlphabet[byte % codeAlphabet.length]);
+  return `${chars.slice(0, 4).join("")}-${chars.slice(4).join("")}`;
 }
 
 function updateSettings(

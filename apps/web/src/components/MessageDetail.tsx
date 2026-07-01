@@ -1,5 +1,6 @@
 import { BookmarkIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 import { modeLabel, relativeTime, senderName } from "../lib/format";
 import type { Message, Sender } from "../types";
@@ -27,9 +28,9 @@ export function MessageDetail({
 
   return (
     <section className="an-rise mx-auto flex min-h-full w-full max-w-3xl flex-col px-4 py-5 md:px-8 md:py-8">
-      <a className="mb-4 inline-flex text-sm text-neutral-500 hover:text-neutral-950 dark:hover:text-neutral-50 md:hidden" href="#/inbox">
+      <Link className="mb-4 inline-flex text-sm text-neutral-500 hover:text-neutral-950 dark:hover:text-neutral-50 md:hidden" to="/inbox">
         Back to inbox
-      </a>
+      </Link>
       <div className="flex items-start gap-3">
         <ModeIcon message={message} />
         <div className="min-w-0 flex-1">
