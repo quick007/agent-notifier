@@ -1,10 +1,10 @@
 # Codex Plugin
 
-Status: plugin bundle scaffolded; `packages/mcp` exposes an implemented local
-stdio MCP server with Agent Notifier tools. Live CLI/browser E2EE transport has
-been verified against the deployed Worker, but the published
-`@agent-notifier/mcp` package and end-to-end plugin launch path are not verified
-yet.
+Status: plugin bundle scaffolded with repo-local marketplace wiring;
+`packages/mcp` exposes an implemented local stdio MCP server with Agent
+Notifier tools. Live CLI/browser E2EE transport has been verified against the
+deployed Worker, but the published `@agent-notifier/mcp` package and end-to-end
+plugin launch path are not verified yet.
 
 ## Bundle
 
@@ -13,6 +13,16 @@ The installable plugin root is:
 ```text
 packages/codex-plugin/agent-notifier
 ```
+
+The repo-local marketplace file is:
+
+```text
+packages/codex-plugin/marketplace.json
+```
+
+It exposes the existing plugin root through a local source path of
+`./agent-notifier`. Do not duplicate or move the plugin bundle for marketplace
+installation.
 
 It contains:
 

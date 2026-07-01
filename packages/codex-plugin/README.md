@@ -8,6 +8,16 @@ The installable plugin root is:
 packages/codex-plugin/agent-notifier
 ```
 
+Repo-local marketplace wiring lives at:
+
+```text
+packages/codex-plugin/marketplace.json
+```
+
+The marketplace entry points at the existing bundle with source path
+`./agent-notifier`. Do not duplicate or move the plugin bundle for marketplace
+installation.
+
 The bundle includes:
 
 - `.codex-plugin/plugin.json` for Codex plugin metadata.
@@ -48,5 +58,6 @@ code.
 ## Development Notes
 
 - Keep the plugin root folder name and `plugin.json` name aligned as `agent-notifier`.
+- Keep `marketplace.json` pointing at `./agent-notifier`.
 - Do not add a remote MCP connector that receives plaintext message content or sender private keys.
 - If a future cloud connector is added, it must orchestrate local encryption or operate only on ciphertext and public metadata.
