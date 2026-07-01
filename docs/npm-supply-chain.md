@@ -51,6 +51,12 @@ verification.
 Public package manifests use `https://github.com/quick007/agent-notifier` for
 repository, homepage, and issue tracker metadata.
 
+Current npm status: the `@agent-notifier` organization/scope was created
+successfully as a free public-package org, but `@agent-notifier/protocol`,
+`@agent-notifier/crypto`, `@agent-notifier/cli`, and `@agent-notifier/mcp`
+still return E404. Package bootstrap and trusted publisher setup are blocked on
+user-present npm two-factor security-key/password verification.
+
 The release workflow installs and checks through Vite+, then packs with
 `vp pm pack` and stages the generated tarballs with `npm stage publish`. This
 keeps pnpm's workspace dependency rewrite while using npm CLI OIDC and
@@ -153,11 +159,13 @@ Mitigations in this repo:
 
 ## Coordinator Setup Tasks
 
-- Create or claim npm packages under the final scope and enable trusted
-  publishing for `https://github.com/quick007/agent-notifier`,
-  `.github/workflows/npm-publish.yml`, and the `npm-publish` environment.
-  Configure the trusted publisher allowed action as `npm stage publish` only,
-  not direct `npm publish`.
+- Bootstrap the individual npm packages under the existing `@agent-notifier`
+  scope and enable trusted publishing for
+  `https://github.com/quick007/agent-notifier`,
+  `.github/workflows/npm-publish.yml`, and the `npm-publish` environment. This
+  requires user-present npm 2FA security-key/password verification. Configure
+  the trusted publisher allowed action as `npm stage publish` only, not direct
+  `npm publish`.
 - Confirm the package records already exist before relying on staged publishing.
   Npm does not allow `npm stage publish` to create brand-new packages.
 - Protect the GitHub `npm-publish` environment with required reviewers.

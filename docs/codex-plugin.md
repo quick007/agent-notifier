@@ -32,8 +32,8 @@ npx -y @agent-notifier/mcp@latest --stdio
 Until the MCP package is published, this command is a wiring contract with the
 CLI/MCP lane, not a validated npm install path. The local MCP implementation
 currently delegates to the CLI client. Without an API URL it returns
-`local_config` results and does not fake notification delivery; with a paired
-sender it uses the live API/E2EE transport. Do not reimplement MCP behavior in
+`local_config` results and does not simulate remote notification delivery; with
+a paired sender it uses the live API/E2EE transport. Do not reimplement MCP behavior in
 `packages/codex-plugin`; consume the `packages/mcp` entrypoint.
 
 Do not replace this with a hosted plaintext connector. Sender private keys, plaintext notification content, duplicate suppression, signing, and response decryption belong in the local MCP or CLI runtime.

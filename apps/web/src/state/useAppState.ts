@@ -1,7 +1,20 @@
 import type { Dispatch, SetStateAction } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-import { defaultState, pairedState } from "../data/seed";
+import { defaultState } from "../data/seed";
+import {
+  applyPairingStatus,
+  completePairingState,
+  pairingErrorState,
+  revokeSenderForDevice,
+  syncPendingState,
+  syncPushState,
+  submitResponseForMessage
+} from "../lib/app-runtime";
+import {
+  getPairingStatus,
+  startCodePairing
+} from "../lib/device-client";
 import type { PairingLink } from "../lib/routes";
 import { readStoredState, writeStoredState } from "../lib/storage";
 import type { AppState, Message, PreviewPolicy, PushState, Sender } from "../types";
@@ -9,6 +22,29 @@ import type { AppState, Message, PreviewPolicy, PushState, Sender } from "../typ
 export function useAppState() {
   const [state, setState] = useState<AppState>(defaultState);
   const [loaded, setLoaded] = useState(false);
+  const stateRef = useRef(state);
+
+  const finishPairing = (snapshot: AppState) => {
+    const { error: _error, ...pairing } = snapshot.settings.pairing;
+    updateSettings(setState, {
+      pairing: { ...pairing, status: "approving" }
+    });
+    void completePairingState(snapshot).then(
+      (paired) => {
+        stateRef.current = paired;
+        setState(paired);
+        void runPendingSync(paired);
+      },
+      (error: unknown) => setState((current) => pairingErrorState(current, error))
+    );
+  };
+
+  const runPendingSync = async (snapshot: AppState) => {
+    const synced = await syncPendingState(snapshot, snapshot.settings.globalPreviewPolicy);
+    if (!synced) return;
+    stateRef.current = synced;
+    setState(synced);
+  };
 
   useEffect(() => {
     let active = true;
@@ -24,21 +60,72 @@ export function useAppState() {
 
   useEffect(() => {
     if (loaded) void writeStoredState(state);
+    stateRef.current = state;
   }, [loaded, state]);
+
+  useEffect(() => {
+    if (!loaded || !state.device?.deviceId) return;
+    void runPendingSync(stateRef.current);
+  }, [loaded, state.device?.deviceId, state.settings.globalPreviewPolicy]);
+
+  useEffect(() => {
+    if (!loaded || !("serviceWorker" in navigator)) return;
+    const handler = (event: MessageEvent) => {
+      if (event.data?.type === "agent-notifier:sync-pending") {
+        void runPendingSync(stateRef.current);
+      }
+    };
+    navigator.serviceWorker.addEventListener("message", handler);
+    return () => navigator.serviceWorker.removeEventListener("message", handler);
+  }, [loaded]);
+
+  useEffect(() => {
+    if (!loaded || !state.device?.deviceId || state.settings.pushState !== "granted_missing_subscription") return;
+    void syncPushState(state.device).then(
+      (pushState) => updateSettings(setState, { pushState }),
+      () => updateSettings(setState, { pushState: "paired_no_push" })
+    );
+  }, [loaded, state.device, state.settings.pushState]);
+
+  useEffect(() => {
+    const pairing = state.settings.pairing;
+    if (!loaded || !pairing.kind || !pairing.sessionId) return;
+    if (!["email_link", "code_ready", "pending"].includes(pairing.status)) return;
+
+    let active = true;
+    const check = async () => {
+      try {
+        const remote = await getPairingStatus(pairing);
+        if (!active) return;
+        setState((current) => ({
+          ...current,
+          settings: {
+            ...current.settings,
+            pairing: applyPairingStatus(current.settings.pairing, remote)
+          }
+        }));
+      } catch {
+        // Polling should not interrupt manual approval.
+      }
+    };
+    void check();
+    const interval = window.setInterval(check, 3000);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+  }, [loaded, state.settings.pairing.kind, state.settings.pairing.sessionId, state.settings.pairing.status]);
 
   const api = useMemo(
     () => ({
       state,
       loaded,
       startPairing() {
-        updateSettings(setState, {
-          pairing: {
-            status: "code_ready",
-            kind: "code",
-            code: generatePairingCode(),
-            expiresAt: new Date(Date.now() + 10 * 60_000).toISOString()
-          }
-        });
+        updateSettings(setState, { pairing: { status: "starting", kind: "code" } });
+        void startCodePairing().then(
+          (pairing) => updateSettings(setState, { pairing }),
+          (error: unknown) => setState((current) => pairingErrorState(current, error))
+        );
       },
       loadPairingLink(pairingLink: PairingLink) {
         setState((current) => {
@@ -66,7 +153,7 @@ export function useAppState() {
         });
       },
       approvePairing() {
-        setState((current) => pairedState(current));
+        finishPairing(stateRef.current);
       },
       setPushState(pushState: PushState) {
         updateSettings(setState, { pushState });
@@ -91,14 +178,20 @@ export function useAppState() {
         }));
       },
       submitReply(messageId: string, text: string) {
-        respond(setState, messageId, { kind: "reply", text });
+        void submitResponseForMessage(stateRef.current, messageId, { kind: "reply", text }).then(
+          (response) => respond(setState, messageId, response),
+          () => undefined
+        );
       },
       submitApproval(messageId: string, decision: "approved" | "rejected", text?: string) {
-        respond(setState, messageId, {
+        void submitResponseForMessage(stateRef.current, messageId, {
           kind: "approval",
           decision,
           ...(text ? { text } : {})
-        });
+        }).then(
+          (response) => respond(setState, messageId, response),
+          () => undefined
+        );
       },
       updateSender(senderId: string, patch: Partial<Sender>) {
         setState((current) => ({
@@ -109,29 +202,23 @@ export function useAppState() {
         }));
       },
       revokeSender(senderId: string) {
-        setState((current) => ({
-          ...current,
-          senders: current.senders.map((sender) =>
-            sender.id === senderId
-              ? { ...sender, revokedAt: new Date().toISOString() }
-              : sender
-          )
-        }));
+        void revokeSenderForDevice(stateRef.current, senderId).then(
+          () => setState((current) => ({
+            ...current,
+            senders: current.senders.map((sender) =>
+              sender.id === senderId
+                ? { ...sender, revokedAt: new Date().toISOString() }
+                : sender
+            )
+          })),
+          () => undefined
+        );
       }
     }),
     [loaded, state]
   );
 
   return api;
-}
-
-const codeAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-
-function generatePairingCode(): string {
-  const bytes = new Uint8Array(8);
-  crypto.getRandomValues(bytes);
-  const chars = Array.from(bytes, (byte) => codeAlphabet[byte % codeAlphabet.length]);
-  return `${chars.slice(0, 4).join("")}-${chars.slice(4).join("")}`;
 }
 
 function updateSettings(
@@ -160,14 +247,11 @@ function updateMessage(
 function respond(
   setState: Dispatch<SetStateAction<AppState>>,
   messageId: string,
-  response: Omit<NonNullable<Message["response"]>, "respondedAt">
+  response: NonNullable<Message["response"]>
 ) {
   updateMessage(setState, messageId, (message) => ({
     ...message,
     deliveryState: "responded",
-    response: {
-      ...response,
-      respondedAt: new Date().toISOString()
-    }
+    response
   }));
 }

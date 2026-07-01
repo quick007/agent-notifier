@@ -15,7 +15,8 @@ import {
 } from "@agent-notifier/crypto";
 import { createApiClient, endpointPath, jsonOrThrow } from "./api-client.js";
 import type { SenderDraftJson } from "./api-client.js";
-import type { AgentNotifierResult, LocalMessageRecord, SendInput, SenderRecord, SetupInput, WaitInput } from "./contracts.js";
+import type { AgentNotifierResult, LocalMessageRecord, MessageTargetDevice, SendInput, SenderRecord, SetupInput, WaitInput } from "./contracts.js";
+import { decryptSenderResponse, parseResponseEnvelope } from "./response.js";
 import { signedFetch } from "./transport.js";
 
 export function senderDraft(sender: SenderRecord): SenderDraftJson {
@@ -87,10 +88,15 @@ export async function remotePairingStatus(apiUrl: string, sessionId: string, sec
   };
 }
 
-export async function remoteStatus(apiUrl: string, sender: SenderRecord, messageId: string): Promise<AgentNotifierResult> {
+export async function remoteStatus(
+  apiUrl: string,
+  sender: SenderRecord,
+  messageId: string,
+  knownDevices: readonly MessageTargetDevice[] = [],
+): Promise<AgentNotifierResult> {
   const endpoint = createApiClient(apiUrl).api.senders.messages[":messageId"].status;
   const response = await signedFetch({ apiUrl, sender, method: "GET", path: endpointPath(endpoint.$url({ param: { messageId } })) }) as Record<string, unknown>;
-  return {
+  const result: AgentNotifierResult = {
     ok: true,
     kind: "message_status",
     transport: "http_api",
@@ -102,12 +108,18 @@ export async function remoteStatus(apiUrl: string, sender: SenderRecord, message
     ...(typeof response.state === "string" ? { state: response.state } : {}),
     ...(typeof response.expiresAt === "string" ? { expiresAt: response.expiresAt } : {}),
   };
+  return result.state === "responded" ? withRemoteResponse(apiUrl, sender, messageId, result, knownDevices) : result;
 }
 
-export async function remoteWait(apiUrl: string, sender: SenderRecord, input: WaitInput): Promise<AgentNotifierResult> {
+export async function remoteWait(
+  apiUrl: string,
+  sender: SenderRecord,
+  input: WaitInput,
+  knownDevices: readonly MessageTargetDevice[] = [],
+): Promise<AgentNotifierResult> {
   const started = Date.now();
   while (Date.now() - started <= input.timeoutMs) {
-    const status = await remoteStatus(apiUrl, sender, input.messageId);
+    const status = await remoteStatus(apiUrl, sender, input.messageId, knownDevices);
     if (status.state === input.state) return status;
     await new Promise((resolve) => setTimeout(resolve, input.intervalMs));
   }
@@ -129,6 +141,7 @@ export async function remoteSendMessage(apiUrl: string, sender: SenderRecord, in
     return liveBlocked("send_message", apiUrl, "Sender signing key is not available locally.");
   }
   const targets = await senderTargets(apiUrl, sender);
+  message.targetDevices = targets.devices.map(({ deviceId, signingPublicKey }) => ({ deviceId, signingPublicKey }));
   const metadata: ServerVisibleMessageMetadata = {
     schemaVersion: 1,
     messageId: message.id.replace("msg_local_", "msg_"),
@@ -202,7 +215,7 @@ function liveBlocked(kind: string, apiUrl: string, message: string): AgentNotifi
 async function senderTargets(apiUrl: string, sender: SenderRecord): Promise<{
   senderId: string;
   recipientId: string;
-  devices: Array<{ deviceId: string; encryptionPublicKey: string }>;
+  devices: Array<{ deviceId: string; encryptionPublicKey: string; signingPublicKey: string }>;
 }> {
   const endpoint = createApiClient(apiUrl).api.senders.targets;
   const response = await signedFetch({ apiUrl, sender, method: "GET", path: endpointPath(endpoint.$url(undefined)) }) as Record<string, unknown>;
@@ -213,10 +226,35 @@ async function senderTargets(apiUrl: string, sender: SenderRecord): Promise<{
   return { senderId: response.senderId, recipientId: response.recipientId, devices };
 }
 
-function isDeviceTarget(value: unknown): value is { deviceId: string; encryptionPublicKey: string } {
+function isDeviceTarget(value: unknown): value is { deviceId: string; encryptionPublicKey: string; signingPublicKey: string } {
   return typeof value === "object" && value !== null &&
     typeof (value as { deviceId?: unknown }).deviceId === "string" &&
-    typeof (value as { encryptionPublicKey?: unknown }).encryptionPublicKey === "string";
+    typeof (value as { encryptionPublicKey?: unknown }).encryptionPublicKey === "string" &&
+    typeof (value as { signingPublicKey?: unknown }).signingPublicKey === "string";
+}
+
+async function withRemoteResponse(
+  apiUrl: string,
+  sender: SenderRecord,
+  messageId: string,
+  result: AgentNotifierResult,
+  knownDevices: readonly MessageTargetDevice[],
+): Promise<AgentNotifierResult> {
+  try {
+    const path = `/api/senders/messages/${encodeURIComponent(messageId)}/response`;
+    const json = await signedFetch({ apiUrl, sender, method: "GET", path });
+    const envelope = parseResponseEnvelope(json);
+    const devices = knownDevices.length > 0
+      ? knownDevices
+      : (await senderTargets(apiUrl, sender)).devices.map(({ deviceId, signingPublicKey }) => ({ deviceId, signingPublicKey }));
+    const response = await decryptSenderResponse({ sender, envelope, devices });
+    return { ...result, responseRef: response.responseId, response };
+  } catch (error) {
+    return {
+      ...result,
+      warning: `Message is responded, but the encrypted response is not yet fetchable or decryptable: ${errorMessage(error)}`,
+    };
+  }
 }
 
 function requestPlaintext(input: SendInput): MessagePlaintext["request"] {
@@ -231,6 +269,10 @@ function requestPlaintext(input: SendInput): MessagePlaintext["request"] {
     };
   }
   return null;
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
 
 function ownedBuffer(bytes: Uint8Array): ArrayBuffer {

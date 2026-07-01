@@ -22,6 +22,7 @@
     "d1:migrate:remote": "vp exec wrangler d1 migrations apply agent-notifier --remote --config wrangler.jsonc"
   },
   "dependencies": {
+    "@agent-notifier/crypto": "workspace:*",
     "@agent-notifier/emails": "workspace:*",
     "@agent-notifier/protocol": "workspace:*",
     "@base-ui-components/react": "1.0.0-rc.0",

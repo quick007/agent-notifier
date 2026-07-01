@@ -45,6 +45,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@agent-notifier/crypto':
+        specifier: workspace:*
+        version: link:../../packages/crypto
       '@agent-notifier/emails':
         specifier: workspace:*
         version: link:../../packages/emails

@@ -160,11 +160,11 @@ export async function getMessageStatus(messageId: string): Promise<AgentNotifier
     }
     return status;
   }
+  const message = findMessage(state, messageId);
   if (shouldUseApi(config) && sender?.id && !sender.id.startsWith("snd_local")) {
-    return remoteStatus(config.apiUrl, sender, messageId);
+    return remoteStatus(config.apiUrl, sender, messageId, message?.targetDevices);
   }
 
-  const message = findMessage(state, messageId);
   if (!message) {
     return {
       ok: false,
@@ -197,7 +197,7 @@ export async function waitForMessageState(input: WaitInput): Promise<AgentNotifi
   const config = transportConfig(state);
   const sender = state.senders.find((candidate) => !candidate.revokedAt);
   if (shouldUseApi(config) && sender?.id && !sender.id.startsWith("snd_local")) {
-    return remoteWait(config.apiUrl, sender, input);
+    return remoteWait(config.apiUrl, sender, input, findMessage(state, input.messageId)?.targetDevices);
   }
 
   const started = Date.now();

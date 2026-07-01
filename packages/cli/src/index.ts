@@ -20,6 +20,7 @@ export {
 } from "./contracts.js";
 export type {
   AgentNotifierResult,
+  AgentNotifierResponse,
   DeliveryState,
   MessageMode,
   SendInput,

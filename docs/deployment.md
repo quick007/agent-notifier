@@ -42,23 +42,36 @@ Hono-derived OpenAPI document instead of duplicating route contracts.
 
 ## Deployment Status
 
-Deployment is not complete or live-verified.
+The Worker deployment is live. Product readiness is still incomplete because
+package publication, plugin install through the published MCP package, and real
+browser push/decrypt/device delivery QA are not complete.
 
 - `wrangler.jsonc` declares D1 binding `DB` for database `agent-notifier` with
   id `c1c7a3ff-9456-48db-8f6c-e7c9fd3d472d`.
-- The personal Cloudflare target is the Lukas account. Keep the account ID out
-  of tracked config and pass it locally, for example with
-  `CLOUDFLARE_ACCOUNT_ID`, when Wrangler needs account selection.
+- Live custom domain: `https://agent-notify.seufert.sh`.
+- Live workers.dev URL: `https://agent-notifier-web.seufert.workers.dev`.
+- The custom domain is live; `/api/health`, `/docs`, and `/openapi.json`
+  returned 200 from `https://agent-notify.seufert.sh`.
+- The first hosted deployment targets the Lukas Cloudflare account, pinned in
+  Wrangler config with account ID `a95007cb065e2bfced646f55bfc5dd35`.
+  Cloudflare account IDs are not secrets, but they are account-specific.
 - Migrations live in `apps/web/migrations`, starting with
   `0001_initial.sql`.
 - Remote D1 is created and baselined for that target. The initial schema already
   existed, `0001_initial.sql` was recorded in `d1_migrations`, and Wrangler now
   reports no remote migrations to apply.
 - No Queue or Durable Object binding is currently configured.
-- Worker secrets still need to be configured.
-- Cloudflare deploy, route/custom domain, and live smoke tests are pending.
-- npm packages have not been publicly published or provenance-verified.
-- Codex plugin installation readiness is not verified.
+- Worker secrets `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `VAPID_PUBLIC_KEY`,
+  `VAPID_PRIVATE_KEY`, and `VAPID_SUBJECT` are configured.
+- `APP_PUBLIC_URL` was removed; setup links derive from the incoming Worker
+  request origin.
+- Resend setup email smoke tests delivered.
+- The npm scope `@agent-notifier` exists as a free public-package org, but
+  `@agent-notifier/protocol`, `@agent-notifier/crypto`,
+  `@agent-notifier/cli`, and `@agent-notifier/mcp` still return E404.
+- npm package bootstrap and trusted publisher setup are blocked on
+  user-present npm 2FA security-key/password verification.
+- Codex plugin installation through the published MCP package is not verified.
 
 ## Local Checks
 
@@ -109,8 +122,9 @@ Current Cloudflare config:
 
 - D1 binding: `DB`
 - D1 database: `agent-notifier`
-- Cloudflare account: Lukas; account ID is local operator configuration, not
-  tracked repo config.
+- Cloudflare account: Lukas; account ID
+  `a95007cb065e2bfced646f55bfc5dd35` is pinned in Wrangler config for the
+  first hosted deployment.
 - Cron: `17 * * * *`
 - Static assets: SPA fallback, with API and docs paths running the Worker first.
 
@@ -122,8 +136,12 @@ Runtime values read by the Worker:
 - `VAPID_PRIVATE_KEY`
 - `VAPID_SUBJECT`
 
-Use Cloudflare secret storage for secret values. Keep `.dev.vars`, `.env`, and
-similar local secret files untracked.
+These values are configured as Worker secrets in Cloudflare. Use Cloudflare
+secret storage for secret values and keep `.dev.vars`, `.env`, and similar
+local secret files untracked.
+Cloudflare account IDs are not secrets, but they are account-specific. Keep
+secrets, private keys, API tokens, and private Cloudflare credentials out of
+git.
 
 `RESEND_API_KEY` and `RESEND_FROM_EMAIL` are required for email pairing. Email
 links are derived from the incoming Worker request origin. Missing VAPID values
@@ -132,9 +150,10 @@ do not reject message creation, but push attempts are recorded as
 
 ## Resend And Push
 
-Email rendering, backend route code, and the Resend adapter exist. Do not claim
-email pairing is live until real Resend credentials, D1 migrations, deployment,
-and setup flow are tested end to end.
+Email rendering, backend route code, and the Resend adapter exist. Worker
+secrets are configured, remote D1 migrations are clean, the Worker is deployed,
+and Resend setup email smoke tests delivered. Do not claim full setup readiness
+until phone pairing and device-side delivery behavior are tested end to end.
 
 Web Push wakeup code exists and uses VAPID settings. Do not claim phone delivery
 until push subscriptions, wakeup delivery, local decrypt/store, and delivery
@@ -147,37 +166,41 @@ Package CI and tag-driven npm publish workflow files exist under
 `vp run -w check:packages` builds and dry-runs publishable packages.
 
 Do not claim npm publication, trusted publisher setup, provenance, or install
-readiness until a real release succeeds.
+readiness until a real release succeeds. The `@agent-notifier` npm scope exists,
+but the package records still return E404; package bootstrap and trusted
+publisher setup are blocked on user-present npm 2FA security-key/password
+verification. Codex plugin installation through the published MCP package is not
+verified.
 
 ## External Setup
 
-Cloudflare dashboard or account steps still required:
+Cloudflare dashboard or account checks for future changes:
 
 - Confirm the D1 database ID in `apps/web/wrangler.jsonc` still points at the
-  baselined `agent-notifier` database in the Lukas account before deployment.
+  baselined `agent-notifier` database in the Lukas account before new
+  deployments.
 - Re-run `vp run @agent-notifier/web#d1:migrate:remote` after any new
   migration files are added. D1 migrations use the source Wrangler config
   because migrations operate from `apps/web/migrations`, not the generated Vite
   deploy output.
-- Set Worker secrets and variables for Resend, app URL, and VAPID.
-- Configure the production route or custom domain.
+- Confirm Worker secrets remain set for Resend and VAPID.
+- Do not add `APP_PUBLIC_URL`; links derive from request origin.
+- Confirm the production route or custom domain only if routing changes.
 - Confirm the deployed Worker has the `17 * * * *` cron trigger.
-- Run a live `/api/health` smoke test against the deployed URL.
-- Open `/docs` and confirm it links to the Hono-derived API contract.
-- Fetch `/openapi.json` and confirm it is the same contract used by CLI/MCP
-  typed-client generation.
+- Re-run live `/api/health`, `/docs`, and `/openapi.json` smoke tests after
+  deployments or route changes.
 
-Resend dashboard steps still required:
+Resend dashboard checks for future changes:
 
-- Verify the sending domain or approved sender address.
-- Create the production API key.
+- Confirm the sending domain or approved sender address.
+- Confirm the production API key is still valid.
 - Confirm `RESEND_FROM_EMAIL` matches the verified sender.
-- Send a real setup email through the deployed Worker before claiming email
-  pairing is production-ready.
+- Keep a delivered setup-email smoke test with release notes before claiming
+  email pairing is production-ready.
 
 ## Release Checklist
 
-Before any public deployment claim, verify:
+Before any production-ready or public-package claim, verify:
 
 - `vp install`
 - `vp run -w build`
@@ -196,4 +219,8 @@ Before any public deployment claim, verify:
 - Cloudflare deploy and live `/api/health` smoke test
 - Live `/docs` reference and Hono-derived `/openapi.json` smoke tests
 - Custom domain or route configuration
+- npm package records no longer return E404
+- npm package bootstrap and trusted publisher setup complete after
+  user-present npm 2FA verification
 - npm trusted publishing/provenance release if packages are public
+- Codex plugin install through the published MCP package

@@ -1,4 +1,5 @@
-import { and, eq, gte, isNull, ne } from "drizzle-orm";
+import { canonicalJson, type DeviceKeyWrap } from "@agent-notifier/protocol";
+import { and, eq, gte, inArray, isNull, ne } from "drizzle-orm";
 
 import { requireDatabase } from "../../db/client";
 import { devices, messageEnvelopes, messageKeyWraps, pairingSessions, recipients, senders } from "../../db/schema";
@@ -85,7 +86,7 @@ export async function updatePushSubscription(env: Env, deviceId: string, pushSub
 export async function pendingMessages(env: Env, deviceId: string) {
   const db = requireDatabase(env);
   const now = nowIso();
-  const wraps = await db
+  const deliveries = await db
     .select({ wrap: messageKeyWraps, message: messageEnvelopes, sender: senders })
     .from(messageKeyWraps)
     .innerJoin(messageEnvelopes, eq(messageKeyWraps.messageId, messageEnvelopes.id))
@@ -98,10 +99,24 @@ export async function pendingMessages(env: Env, deviceId: string) {
     ))
     .all();
 
-  return wraps.map(({ wrap, message, sender }) => ({
+  const messageIds = [...new Set(deliveries.map(({ message }) => message.id))];
+  const allWraps = messageIds.length === 0
+    ? []
+    : await db.select().from(messageKeyWraps).where(inArray(messageKeyWraps.messageId, messageIds)).all();
+  const wrapsByMessage = new Map<string, DeviceKeyWrap[]>();
+  for (const wrap of allWraps) {
+    const keyWraps = wrapsByMessage.get(wrap.messageId) ?? [];
+    keyWraps.push(toDeviceKeyWrap(wrap));
+    wrapsByMessage.set(wrap.messageId, keyWraps);
+  }
+  for (const keyWraps of wrapsByMessage.values()) {
+    keyWraps.sort(compareKeyWraps);
+  }
+
+  return deliveries.map(({ wrap, message, sender }) => ({
     messageId: message.id,
     metadata: {
-      schemaVersion: message.schemaVersion,
+      schemaVersion: 1 as const,
       messageId: message.id,
       recipientId: message.recipientId,
       senderId: message.senderId,
@@ -121,13 +136,8 @@ export async function pendingMessages(env: Env, deviceId: string) {
       encryptionPublicKey: sender.encryptionPublicKey,
       signingPublicKey: sender.signingPublicKey,
     },
-    keyWrap: {
-      schemaVersion: 1,
-      deviceId: wrap.deviceId,
-      ephemeralPublicKey: wrap.ephemeralPublicKey,
-      wrappedKey: wrap.wrappedKey,
-      wrapNonce: wrap.wrapNonce,
-    },
+    keyWraps: wrapsByMessage.get(message.id) ?? [toDeviceKeyWrap(wrap)],
+    keyWrap: toDeviceKeyWrap(wrap),
   }));
 }
 
@@ -194,10 +204,43 @@ export async function listSendersForDevice(env: Env, deviceId: string) {
       appName: sender.appName,
       machineLabel: sender.machineLabel,
       workspaceLabel: sender.workspaceLabel,
-      previewPolicy: sender.previewPolicy,
+      encryptionPublicKey: sender.encryptionPublicKey,
+      previewPolicy: toPreviewPolicy(sender.previewPolicy),
       createdAt: sender.createdAt,
       revokedAt: sender.revokedAt,
       lastUsedAt: sender.lastUsedAt,
     })),
   };
+}
+
+function toDeviceKeyWrap(wrap: {
+  readonly deviceId: string;
+  readonly ephemeralPublicKey: string;
+  readonly wrappedKey: string;
+  readonly wrapNonce: string;
+}): DeviceKeyWrap {
+  return {
+    schemaVersion: 1,
+    deviceId: wrap.deviceId,
+    ephemeralPublicKey: wrap.ephemeralPublicKey,
+    wrappedKey: wrap.wrappedKey,
+    wrapNonce: wrap.wrapNonce,
+  };
+}
+
+function compareKeyWraps(left: DeviceKeyWrap, right: DeviceKeyWrap): number {
+  return compareCodeUnits(canonicalJson(left), canonicalJson(right));
+}
+
+function compareCodeUnits(left: string, right: string): number {
+  if (left < right) return -1;
+  if (left > right) return 1;
+  return 0;
+}
+
+type PreviewPolicyValue = "allow_agent_choice" | "always_hide" | "always_show_non_sensitive";
+
+function toPreviewPolicy(value: string): PreviewPolicyValue {
+  if (value === "always_hide" || value === "always_show_non_sensitive") return value;
+  return "allow_agent_choice";
 }

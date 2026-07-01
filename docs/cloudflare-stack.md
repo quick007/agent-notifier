@@ -22,6 +22,20 @@ The app currently uses Hono/OpenAPIHono for contract-first API routing. Keep
 new API routes in that stack so the Worker implementation, typed client
 surface, and OpenAPI document stay aligned.
 
+## Live Status
+
+- Worker deployed at `https://agent-notify.seufert.sh` and
+  `https://agent-notifier-web.seufert.workers.dev`.
+- The custom domain is live; `/api/health`, `/docs`, and `/openapi.json`
+  returned 200 from `https://agent-notify.seufert.sh`.
+- Remote D1 migrations are clean with no pending migrations.
+- Worker secrets `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `VAPID_PUBLIC_KEY`,
+  `VAPID_PRIVATE_KEY`, and `VAPID_SUBJECT` are configured.
+- `APP_PUBLIC_URL` is not used; links derive from request origin.
+- Resend setup email smoke tests delivered.
+- Real browser Web Push, decrypt, local store, and delivery-report QA is still
+  incomplete.
+
 ## Wrangler Configuration
 
 Current tracked config:
@@ -29,6 +43,8 @@ Current tracked config:
 - Worker name: `agent-notifier-web`.
 - Main: `./worker/index.ts`.
 - Compatibility date: `2026-07-01`.
+- Account ID: `a95007cb065e2bfced646f55bfc5dd35` for the Lukas Cloudflare
+  account used by the first hosted deployment.
 - Static assets: SPA fallback, with `/api/*` running the Worker first.
 - D1 binding: `DB`.
 - D1 database: `agent-notifier`.
@@ -39,8 +55,10 @@ No Queue or Durable Object binding is configured. Push fanout currently happens
 inside `ctx.waitUntil`; add a Queue only if retry isolation or backpressure
 requires it.
 
-Do not commit Cloudflare account IDs, API tokens, private keys, or local secret
-files. The database ID is tracked because Wrangler requires it for the bound D1
+Cloudflare account IDs are not secrets, but they are account-specific. This
+repo tracks the Lukas account ID for the first hosted deployment. Do not commit
+API tokens, private keys, local secret files, or private Cloudflare credentials.
+The database ID is tracked because Wrangler requires it for the bound D1
 resource.
 
 ## Runtime Values
@@ -112,9 +130,9 @@ vp run -w build
 vp run -w check
 ```
 
-Before public launch, still verify Cloudflare deployment, D1 migrations, Resend
-email, Web Push on real devices, PWA fetch/decrypt/store/report behavior, and
-live `/api/health`.
+Before a production-ready claim, still verify Web Push on real devices and the
+PWA fetch/decrypt/store/report behavior. Re-run live `/api/health`, `/docs`,
+and `/openapi.json` smoke tests after deployments or routing changes.
 
 ## Guardrails
 

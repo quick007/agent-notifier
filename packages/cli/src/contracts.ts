@@ -34,6 +34,12 @@ export interface LocalMessageRecord {
   dedupeKey: string;
   idempotencyKey?: string;
   responseRef?: string;
+  targetDevices?: MessageTargetDevice[];
+}
+
+export interface MessageTargetDevice {
+  deviceId: string;
+  signingPublicKey: string;
 }
 
 export interface SetupInput {
@@ -66,6 +72,25 @@ export interface WaitInput {
   intervalMs: number;
 }
 
+export type AgentNotifierResponse =
+  | {
+    responseId: string;
+    messageId: string;
+    deviceId: string;
+    kind: "reply";
+    body: string;
+    respondedAt: string;
+  }
+  | {
+    responseId: string;
+    messageId: string;
+    deviceId: string;
+    kind: "approval";
+    decision: "approved" | "rejected";
+    note?: string;
+    respondedAt: string;
+  };
+
 export interface AgentNotifierResult {
   ok: boolean;
   kind: string;
@@ -80,6 +105,7 @@ export interface AgentNotifierResult {
   serverAccepted?: boolean;
   apiUrl?: string;
   responseRef?: string;
+  response?: AgentNotifierResponse;
   senders?: SenderRecord[];
   warning?: string;
   error?: {

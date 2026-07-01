@@ -86,6 +86,7 @@ export interface PendingMessageEnvelope {
   readonly contentNonce: string;
   readonly contentAadHash: string;
   readonly senderSignature: string;
+  readonly keyWraps: readonly DeviceKeyWrap[];
   readonly keyWrap: DeviceKeyWrap;
 }
 

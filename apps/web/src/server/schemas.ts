@@ -213,6 +213,42 @@ export const SenderTargetResponseSchema = z.object({
   })),
 }).openapi("SenderTargetResponse");
 
+export const PendingMessageSchema = z.object({
+  messageId: MessageId,
+  metadata: MessageMetadataSchema,
+  ciphertext: Base64Url,
+  contentNonce: Base64Url,
+  contentAadHash: Base64Url,
+  senderSignature: Base64Url,
+  sender: z.object({
+    senderId: SenderId,
+    displayName: z.string(),
+    kind: SenderKind,
+    encryptionPublicKey: Base64Url,
+    signingPublicKey: Base64Url,
+  }),
+  keyWraps: z.array(DeviceKeyWrapSchema).min(1),
+  keyWrap: DeviceKeyWrapSchema,
+}).openapi("PendingMessage");
+
+export const PendingMessagesResponseSchema = z.object({ messages: z.array(PendingMessageSchema) }).openapi("PendingMessagesResponse");
+
+export const DeviceSenderSchema = z.object({
+  id: SenderId,
+  displayName: z.string(),
+  kind: SenderKind,
+  appName: z.string().nullable(),
+  machineLabel: z.string().nullable(),
+  workspaceLabel: z.string().nullable(),
+  encryptionPublicKey: Base64Url,
+  previewPolicy: PreviewPolicy,
+  createdAt: IsoTimestamp,
+  revokedAt: IsoTimestamp.nullable(),
+  lastUsedAt: IsoTimestamp.nullable(),
+}).openapi("DeviceSender");
+
+export const DeviceSendersResponseSchema = z.object({ senders: z.array(DeviceSenderSchema) }).openapi("DeviceSendersResponse");
+
 export const AnyJsonResponseSchema = z.record(z.string(), z.unknown()).openapi("JsonResponse");
 
 export type SenderDraft = z.infer<typeof SenderDraftSchema>;

@@ -7,22 +7,32 @@ import { CopyBlock } from "./CopyBlock";
 import { Badge, Button } from "./ui";
 
 export function EmailLinkPanel({
+  canApprove,
+  error,
+  onApprove,
   onPushState,
   onStartPairing,
   secretPresent,
-  sessionId
+  senderDisplayName,
+  sessionId,
+  status
 }: {
+  canApprove: boolean;
+  error?: string;
+  onApprove: () => void;
   onPushState: (state: Settings["pushState"]) => void;
   onStartPairing: () => void;
   secretPresent: boolean;
+  senderDisplayName?: string;
   sessionId: string;
+  status: Settings["pairing"]["status"];
 }) {
   const navigate = useNavigate();
 
   return (
-    <div>
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-sm font-medium">Setup link detected</p>
+    <div className="min-w-0">
+      <div className="flex min-w-0 items-center justify-between gap-3">
+        <p className="min-w-0 text-sm font-medium">Setup link detected</p>
         <Badge tone={secretPresent ? "green" : "amber"}>
           {secretPresent ? "Secret ready" : "Needs secret"}
         </Badge>
@@ -34,12 +44,15 @@ export function EmailLinkPanel({
         This device captured the email pairing session. Sender details appear
         here before approval, and contents remain end-to-end encrypted.
       </p>
+      <SenderPreview senderDisplayName={senderDisplayName} />
+      {error && <p className="mt-3 text-sm text-red-600 dark:text-red-400">{error}</p>}
       <div className="mt-4 grid gap-2">
         <Button onClick={async () => onPushState(await requestPushPermission())}>
           Enable notifications
         </Button>
-        <Button disabled tone="primary">
-          Waiting for sender details
+        <Button disabled={!canApprove || status === "approving"} onClick={onApprove} tone="primary">
+          <CheckCircleIcon className="h-5 w-5" />
+          {status === "approving" ? "Approving..." : canApprove ? "Approve sender" : "Waiting for sender details"}
         </Button>
         <Button
           tone="ghost"
@@ -56,51 +69,67 @@ export function EmailLinkPanel({
 }
 
 export function CodePanel({
+  canApprove,
   code,
+  error,
   expiresAt,
   onApprove,
-  onPushState
+  onPushState,
+  secret,
+  senderDisplayName,
+  status
 }: {
+  canApprove: boolean;
   code: string;
+  error?: string;
   expiresAt?: string;
   onApprove: () => void;
   onPushState: (state: Settings["pushState"]) => void;
+  secret?: string;
+  senderDisplayName?: string;
+  status: Settings["pairing"]["status"];
 }) {
-  const navigate = useNavigate();
-
   return (
-    <div>
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-sm font-medium">Pairing code</p>
-        <Badge tone="amber">10 min</Badge>
+    <div className="min-w-0">
+      <div className="flex min-w-0 items-center justify-between gap-3">
+        <p className="min-w-0 text-sm font-medium">Pairing code</p>
+        <Badge tone={canApprove ? "green" : "amber"}>{canApprove ? "Claimed" : "Waiting"}</Badge>
       </div>
-      <p className="mt-3 select-all rounded-xl bg-neutral-950 px-4 py-4 text-center font-mono text-2xl font-semibold tracking-[0.2em] text-white dark:bg-neutral-50 dark:text-neutral-950">
-        {code}
-      </p>
+      <CopyBlock className="mt-3 min-w-0 max-w-full" label="Code" value={code} />
+      {secret && (
+        <CopyBlock className="mt-3 min-w-0 max-w-full" label="Secret" value={secret} />
+      )}
       <p className="mt-3 text-sm leading-6 text-neutral-600 dark:text-neutral-300">
-        Give this code to your agent. When it claims the session, approve the
-        sender here.
+        Give both values to your agent. When it claims the session, confirm the
+        sender below before pairing this device.
       </p>
+      <SenderPreview senderDisplayName={senderDisplayName} />
       {expiresAt && (
         <p className="mt-1 text-xs text-neutral-500">
           Expires {new Date(expiresAt).toLocaleTimeString()}
         </p>
       )}
+      {error && <p className="mt-3 text-sm text-red-600 dark:text-red-400">{error}</p>}
       <div className="mt-4 grid gap-2">
         <Button onClick={async () => onPushState(await requestPushPermission())}>
           Enable notifications
         </Button>
-        <Button
-          tone="primary"
-          onClick={() => {
-            onApprove();
-            navigate("/inbox");
-          }}
-        >
+        <Button disabled={!canApprove || status === "approving"} tone="primary" onClick={onApprove}>
           <CheckCircleIcon className="h-5 w-5" />
-          Approve sender
+          {status === "approving" ? "Approving..." : canApprove ? "Approve sender" : "Waiting for sender"}
         </Button>
       </div>
+    </div>
+  );
+}
+
+function SenderPreview({ senderDisplayName }: { senderDisplayName: string | undefined }) {
+  return (
+    <div className="mt-3 min-w-0 rounded-lg border border-neutral-200 px-3 py-2 dark:border-neutral-800">
+      <p className="text-xs font-medium uppercase text-neutral-500">Sender</p>
+      <p className="mt-1 break-words text-sm text-neutral-800 dark:text-neutral-200">
+        {senderDisplayName ?? "Waiting for sender details"}
+      </p>
     </div>
   );
 }

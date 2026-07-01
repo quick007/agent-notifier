@@ -1,4 +1,4 @@
-import type { CanonicalJsonValue } from "./canonical-json.js";
+import { canonicalJson, type CanonicalJsonValue } from "./canonical-json.js";
 import { DOMAINS, SCHEMA_VERSION } from "./domains.js";
 import { canonicalSigningBytes, canonicalSigningText } from "./signing.js";
 import type {
@@ -77,7 +77,7 @@ export function buildMessageEnvelopeSigningPayload(
     ciphertext: envelope.ciphertext,
     contentNonce: envelope.contentNonce,
     contentAadHash: envelope.contentAadHash,
-    keyWraps: envelope.keyWraps.map(normalizeKeyWrap),
+    keyWraps: normalizeKeyWraps(envelope.keyWraps),
   };
 }
 
@@ -158,6 +158,18 @@ function normalizeKeyWrap(wrap: DeviceKeyWrap): CanonicalJsonValue {
     wrappedKey: wrap.wrappedKey,
     wrapNonce: wrap.wrapNonce,
   };
+}
+
+function normalizeKeyWraps(wraps: readonly DeviceKeyWrap[]): readonly CanonicalJsonValue[] {
+  return wraps
+    .map(normalizeKeyWrap)
+    .sort((left, right) => compareCodeUnits(canonicalJson(left), canonicalJson(right)));
+}
+
+function compareCodeUnits(left: string, right: string): number {
+  if (left < right) return -1;
+  if (left > right) return 1;
+  return 0;
 }
 
 function assertSchemaVersion(value: number, label: string): void {

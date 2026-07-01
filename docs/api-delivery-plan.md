@@ -1,9 +1,9 @@
 # API and Delivery Backend
 
-Status: current backend design notes. The Worker scaffold, Hono
-contract-first router, D1 schema, initial migration, and service modules exist.
-Backend API work should keep typed clients and API docs on the same route
-source of truth.
+Status: current backend design and deployment notes. The Worker scaffold, Hono
+contract-first router, D1 schema, initial migration, service modules, generated
+API docs, and live Worker deployment exist. Backend API work should keep typed
+clients and API docs on the same route source of truth.
 
 ## Owned Surface
 
@@ -49,6 +49,21 @@ Current route families:
 - Devices: register, push subscription, pending messages, delivered, respond,
   sender list, sender revoke.
 - Senders: submit message, status, events, response.
+
+## Verified Live Status
+
+- Worker deployed at `https://agent-notify.seufert.sh` and
+  `https://agent-notifier-web.seufert.workers.dev`.
+- The custom domain is live; `/api/health`, `/docs`, and `/openapi.json`
+  returned 200 from `https://agent-notify.seufert.sh`.
+- Hono/Scalar docs are generated from the route/schema layer, with
+  `/openapi.json` as the Hono-derived OpenAPI 3.1 contract.
+- Remote D1 migrations are clean with no pending migrations.
+- Worker secrets `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `VAPID_PUBLIC_KEY`,
+  `VAPID_PRIVATE_KEY`, and `VAPID_SUBJECT` are configured.
+- `APP_PUBLIC_URL` was removed; setup links derive from the incoming Worker
+  request origin.
+- Resend setup email smoke tests delivered.
 
 ## Implemented Backend Modules
 
@@ -101,14 +116,19 @@ Current route families:
 
 ## Current Gaps
 
-- Live Cloudflare deploy, custom route/domain, and live smoke tests are pending.
-- Worker secrets for Resend, app URL, and VAPID must be configured in
-  Cloudflare.
-- D1 migrations must be applied whenever schema changes land.
+- D1 migrations must still be applied whenever schema changes land.
 - No Queue binding is configured; push fanout currently runs through
   `ctx.waitUntil`.
 - Real browser push, service-worker fetch/decrypt/store, and delivery reporting
   still need end-to-end device QA.
+- The npm scope `@agent-notifier` exists as a free public-package org, but
+  `@agent-notifier/protocol`, `@agent-notifier/crypto`,
+  `@agent-notifier/cli`, and `@agent-notifier/mcp` still return E404.
+- npm package bootstrap and trusted publisher setup are blocked on
+  user-present npm 2FA security-key/password verification.
+- Codex plugin install through the published MCP package is not verified.
+- A hosted cloud connector remains intentionally not approved for plaintext
+  message, reply, approval, or sender-private-key flows.
 - Broaden route tests around pairing, signatures, plaintext rejection, message
   persistence, response first-wins behavior, push failures, and retention.
 
@@ -124,5 +144,6 @@ vp run -w check
 ```
 
 These checks are local verification only. They do not prove live Cloudflare
-deployment, Resend delivery, Web Push delivery, npm publication, or plugin
-install readiness.
+deployment health, Resend delivery, Web Push delivery, npm publication, or
+plugin install readiness unless those live checks are run separately for the
+current release.

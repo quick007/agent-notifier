@@ -16,8 +16,8 @@ It is not remote control, multi-turn chat, or a cloud-readable inbox.
 
 This repository now has source foundations across the Worker app, PWA shell,
 backend services, local CLI, local MCP server, protocol, crypto, email rendering,
-and Codex plugin bundle. It is not yet a production deployment or published npm
-release.
+and Codex plugin bundle. The Worker is deployed, but the product is not yet
+production-ready and the npm packages are not published.
 
 Public source repository:
 [github.com/quick007/agent-notifier](https://github.com/quick007/agent-notifier).
@@ -25,8 +25,9 @@ Public source repository:
 - `apps/web` is a Vite, React, Tailwind, and Cloudflare Worker app.
 - The Worker API contract should be owned by Hono/OpenAPIHono routes for
   health, pairing, devices, senders, and API documentation.
-- Scalar API reference routes are served at `/docs`, backed by the Hono-derived
-  OpenAPI 3.1 document at `/openapi.json`.
+- Hono/Scalar API reference routes are generated from the route/schema layer and
+  served at `/docs`, backed by the Hono-derived OpenAPI 3.1 document at
+  `/openapi.json`.
 - Drizzle D1 schema and an initial migration exist under `apps/web`.
 - Backend modules cover pairing, devices, encrypted message envelopes, response
   storage, retention, Resend setup email, and Web Push wakeups.
@@ -41,8 +42,21 @@ Public source repository:
 - The Codex plugin bundle source exists at
   `packages/codex-plugin/agent-notifier` and points at the local MCP package
   shape.
-- End-to-end setup, push, decrypt, reply/approval, npm publication, production
-  deployment, and plugin install readiness are not verified from this checkout.
+- The Worker is live at `https://agent-notify.seufert.sh` and
+  `https://agent-notifier-web.seufert.workers.dev`.
+- The custom domain is live; `/api/health`, `/docs`, and `/openapi.json`
+  returned 200 from `https://agent-notify.seufert.sh`.
+- Remote D1 migrations are clean with no pending migrations.
+- Worker secrets are configured for Resend and VAPID.
+- Resend setup email smoke tests delivered.
+- Real browser Web Push, decrypt, local store, and delivery-report device QA are
+  not complete.
+- The npm scope `@agent-notifier` exists as a free public-package org, but
+  `@agent-notifier/protocol`, `@agent-notifier/crypto`,
+  `@agent-notifier/cli`, and `@agent-notifier/mcp` still return E404.
+  Package bootstrap and trusted publisher setup are blocked on user-present npm
+  2FA security-key/password verification, and Codex plugin install through the
+  published MCP package is not verified.
 
 ## Trust Boundary
 
@@ -101,8 +115,9 @@ Exact policy for agents:
 - Do not invent approval gates just because this tool exists.
 
 The local CLI implements the intended command shape with JSON output. Local
-configuration mode does not send setup email, store plaintext messages, or fake
-delivery; live delivery requires a Worker API URL and paired sender:
+configuration mode does not send setup email, store plaintext messages, or
+simulate remote delivery; live delivery requires a Worker API URL and paired
+sender:
 
 ```bash
 npx -y @agent-notifier/cli@latest setup
@@ -116,7 +131,9 @@ npx -y @agent-notifier/cli@latest notify \
   --json
 ```
 
-These `npx` examples depend on npm publication, which is not verified yet.
+These `npx` examples depend on npm publication. The npm scope exists, but the
+package records currently return E404, so use them as intended command shape
+until the first release.
 
 ## MCP And Agent Integrations
 
@@ -124,6 +141,9 @@ The blessed integration path is local stdio MCP or CLI, because plaintext and
 sender private keys need to stay on the sender machine. Live CLI/MCP HTTP
 transport should use a typed client generated from the Hono/OpenAPIHono
 contract, not duplicated hand-written route types.
+
+A hosted cloud connector remains intentionally not approved for plaintext
+message, reply, approval, or sender-private-key flows.
 
 Local MCP source exists in `packages/mcp` and exposes the stdio command:
 
@@ -139,8 +159,9 @@ packages/codex-plugin/agent-notifier
 
 The plugin bundle currently includes metadata, a local MCP server config, and a
 Codex skill with usage policy. The MCP package implementation exists locally,
-but the `@agent-notifier/mcp@latest` package, plugin installation path, and
-end-to-end Codex launch flow are not verified yet.
+but the `@agent-notifier/mcp@latest` package is not published, package records
+currently return E404, package bootstrap is blocked on user-present npm 2FA,
+and plugin installation through the published MCP package is not verified yet.
 
 Claude, Claude Code, CI, and generic agents should use the same local MCP server
 or CLI package once available. See [Integrations](docs/integrations.md) for the
@@ -167,15 +188,19 @@ The web app is designed for Cloudflare Workers:
 - Wrangler config: `apps/web/wrangler.jsonc`
 - Worker name: `agent-notifier-web`
 - Compatibility date: `2026-07-01`
+- First hosted deployment account: Lukas, pinned in Wrangler config with
+  account ID `a95007cb065e2bfced646f55bfc5dd35`.
+- Live custom domain: `https://agent-notify.seufert.sh`
+- Live workers.dev URL: `https://agent-notifier-web.seufert.workers.dev`
 - Assets use single-page app fallback, with `/api/*` routed through the Worker.
 - `wrangler.jsonc` declares the `DB` D1 binding for the `agent-notifier`
   database and an hourly retention cron at `17 * * * *`.
 - The personal Cloudflare D1 target for `agent-notifier` is created and
-  baselined. Worker secrets, deployment, custom domain, and live smoke tests
-  still need environment-specific verification. For a fresh Cloudflare target,
-  create or verify the `agent-notifier` D1 database and make sure
-  `database_id` in `wrangler.jsonc` matches it before applying migrations or
-  deploying.
+  baselined, and remote migrations currently report no pending migrations.
+- The deployed custom domain returned 200 for `/api/health`, `/docs`, and
+  `/openapi.json`.
+- `APP_PUBLIC_URL` is intentionally not configured; setup links derive their
+  origin from the incoming Worker request.
 
 Runtime values read by the Worker for deployed email and push:
 
@@ -185,9 +210,14 @@ Runtime values read by the Worker for deployed email and push:
 - `VAPID_PRIVATE_KEY`
 - `VAPID_SUBJECT`
 
-Do not commit secrets or private Cloudflare credentials.
-Keep the Cloudflare account ID out of tracked config; set it locally, for
-example through `CLOUDFLARE_ACCOUNT_ID`, when Wrangler needs account selection.
+Those Worker secrets are configured in Cloudflare. Resend setup email smoke
+tests delivered. Full phone Web Push, decrypt, local store, and delivery-report
+QA is still pending.
+
+Cloudflare account IDs are not secrets, but they are account-specific. This
+repo pins the Lukas account ID in Wrangler config for the first hosted
+deployment. Do not commit secrets, private keys, API tokens, or private
+Cloudflare credentials.
 
 Deployment notes live in [Deployment](docs/deployment.md). They describe this
 repo's own Cloudflare operation path, not a public self-hosting feature.
@@ -221,12 +251,17 @@ The target package posture is trusted publishing or OIDC, npm provenance, no
 long-lived npm tokens, no install lifecycle scripts in published packages, and
 small package contents allowlisted by manifest.
 
-Current status: npm publication and provenance are not verified. Protocol,
+Current status: npm publication and provenance are not verified. The
+`@agent-notifier` npm org/scope exists as a free public-package org, but
+`@agent-notifier/protocol`, `@agent-notifier/crypto`,
+`@agent-notifier/cli`, and `@agent-notifier/mcp` still return E404. Protocol,
 crypto, CLI, and MCP have publish-shaped manifests; emails and the Codex plugin
-package remain private. Package CI and tag-driven publish workflows exist, with
-manual dispatch kept for dry-run verification. Do not claim public package
-provenance until GitHub/npm trusted publishing is configured and a real release
-succeeds.
+package remain private. Package bootstrap and trusted publisher setup are
+blocked on user-present npm 2FA security-key/password verification, and
+package-driven Codex plugin install is not verified. Package CI and tag-driven
+publish workflows exist, with manual dispatch kept for dry-run verification. Do
+not claim public package provenance until GitHub/npm trusted publishing is
+configured and a real release succeeds.
 
 The local package guard is:
 

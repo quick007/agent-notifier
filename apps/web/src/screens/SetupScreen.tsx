@@ -107,8 +107,8 @@ function TopLink({
 function LandingLayout({ onStartPairing }: { onStartPairing: () => void }) {
   return (
     <>
-      <section className="mt-10 grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(26rem,0.95fr)] lg:items-start xl:gap-14">
-        <div className="max-w-2xl lg:pt-8">
+      <section className="mt-10 grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(26rem,0.95fr)] lg:items-start xl:gap-14">
+        <div className="min-w-0 max-w-2xl lg:pt-8">
           <h1 className="text-4xl font-semibold tracking-tight text-neutral-950 dark:text-neutral-50 sm:text-5xl lg:text-6xl">
             Encrypted notifications and lightweight approvals for AI agents
           </h1>
@@ -143,7 +143,7 @@ function LandingLayout({ onStartPairing }: { onStartPairing: () => void }) {
           </div>
         </div>
 
-        <div className="min-w-0 lg:sticky lg:top-8">
+        <div className="min-w-0 max-w-full lg:sticky lg:top-8">
           <SetupInstructions />
           <ManualPairFallback
             className="mt-5"
@@ -152,8 +152,8 @@ function LandingLayout({ onStartPairing }: { onStartPairing: () => void }) {
         </div>
       </section>
 
-      <section className="mt-16 grid gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
-        <div>
+      <section className="mt-16 grid min-w-0 gap-10 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:items-start">
+        <div className="min-w-0">
           <h2 className="text-lg font-semibold tracking-tight text-neutral-950 dark:text-neutral-50">
             What we can and cannot see
           </h2>
@@ -161,7 +161,7 @@ function LandingLayout({ onStartPairing }: { onStartPairing: () => void }) {
             <TrustNote />
           </div>
         </div>
-        <div>
+        <div className="min-w-0">
           <h2 className="text-lg font-semibold tracking-tight text-neutral-950 dark:text-neutral-50">
             Three ways an agent can reach you
           </h2>
@@ -197,8 +197,8 @@ function PairingLayout({
   settings: Settings;
 }) {
   return (
-    <section className="mt-10 grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(24rem,0.75fr)] lg:items-start xl:gap-14">
-      <div className="max-w-2xl lg:pt-8">
+    <section className="mt-10 grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(24rem,0.75fr)] lg:items-start xl:gap-14">
+      <div className="min-w-0 max-w-2xl lg:pt-8">
         <h1 className="text-4xl font-semibold tracking-tight text-neutral-950 dark:text-neutral-50 sm:text-5xl">
           Finish pairing this device
         </h1>
@@ -211,19 +211,33 @@ function PairingLayout({
         </div>
       </div>
 
-      <div className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+      <div className="min-w-0 max-w-full rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
         {hasEmailLink ? (
           <EmailLinkPanel
+            canApprove={Boolean(settings.pairing.senderDisplayName)}
+            onApprove={onApprovePairing}
             onPushState={onPushState}
             onStartPairing={onStartPairing}
             secretPresent={Boolean(settings.pairing.secret)}
+            {...(settings.pairing.error ? { error: settings.pairing.error } : {})}
+            {...(settings.pairing.senderDisplayName
+              ? { senderDisplayName: settings.pairing.senderDisplayName }
+              : {})}
             sessionId={settings.pairing.sessionId ?? ""}
+            status={settings.pairing.status}
           />
         ) : (
           <CodePanel
+            canApprove={Boolean(settings.pairing.senderDisplayName)}
             code={settings.pairing.code ?? ""}
+            {...(settings.pairing.error ? { error: settings.pairing.error } : {})}
             onApprove={onApprovePairing}
             onPushState={onPushState}
+            {...(settings.pairing.secret ? { secret: settings.pairing.secret } : {})}
+            {...(settings.pairing.senderDisplayName
+              ? { senderDisplayName: settings.pairing.senderDisplayName }
+              : {})}
+            status={settings.pairing.status}
             {...(settings.pairing.expiresAt
               ? { expiresAt: settings.pairing.expiresAt }
               : {})}

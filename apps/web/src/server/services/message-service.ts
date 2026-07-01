@@ -1,3 +1,10 @@
+import { importSigningPublicKey, sha256Base64Url, verifyP256Sha256 } from "@agent-notifier/crypto";
+import {
+  messageContentAadBytes,
+  messageEnvelopeSigningBytes,
+  responseEnvelopeSigningBytes,
+  type ServerVisibleMessageMetadata,
+} from "@agent-notifier/protocol";
 import { and, eq, isNull } from "drizzle-orm";
 
 import { requireDatabase } from "../../db/client";
@@ -29,6 +36,9 @@ export async function createMessage(env: Env, ctx: WaitUntilContext, input: Mess
     pushSubscriptionJson: devices.pushSubscriptionJson,
   }).from(devices).where(and(eq(devices.recipientId, input.recipientId), isNull(devices.revokedAt))).all();
   assertKeyWrapScope(input.keyWraps, targets.map((target) => target.deviceId));
+  const metadata = messageMetadata(input);
+  await assertContentAadHash(metadata, input.contentAadHash);
+  await assertMessageEnvelopeSignature(sender.signingPublicKey, input, metadata);
 
   await db.insert(messageEnvelopes).values({
     id: input.messageId,
@@ -113,7 +123,13 @@ export async function submitResponse(
     eq(messageKeyWraps.messageId, messageId),
     eq(messageKeyWraps.deviceId, deviceId),
   )).limit(1).all();
+  const [device] = await db.select().from(devices).where(and(
+    eq(devices.id, deviceId),
+    eq(devices.recipientId, recipientId),
+    isNull(devices.revokedAt),
+  )).limit(1).all();
   if (!wrap) throw new AppError(403, "scope_mismatch", "Device is not a target for this message.");
+  if (!device) throw new AppError(401, "device_not_active", "Device is not active.");
   if (message.state === "responded") throw new AppError(409, "already_responded", "Message already has a response.");
   if (message.state === "expired" || message.expiresAt < nowIso()) throw new AppError(409, "message_expired", "Message is expired.");
   if (message.mode === "notify") throw new AppError(400, "response_not_allowed", "Notifications do not accept responses.");
@@ -123,6 +139,7 @@ export async function submitResponse(
   if (message.mode === "request_approval" && input.kind !== "approval") {
     throw new AppError(400, "response_kind_mismatch", "Approval requests require approval responses.");
   }
+  await assertResponseEnvelopeSignature(device.signingPublicKey, messageId, input);
 
   const now = nowIso();
   await db.insert(responseEnvelopes).values({
@@ -216,4 +233,61 @@ async function addEvent(
     ...(deviceId === undefined ? {} : { deviceId }),
     ...(detailsJson === undefined ? {} : { detailsJson }),
   }).run();
+}
+
+function messageMetadata(input: MessageSubmission): ServerVisibleMessageMetadata {
+  return {
+    schemaVersion: input.schemaVersion,
+    messageId: input.messageId,
+    recipientId: input.recipientId,
+    senderId: input.senderId,
+    mode: input.mode,
+    createdAt: input.createdAt,
+    expiresAt: input.expiresAt,
+    ...(input.idempotencyKey === undefined ? {} : { idempotencyKey: input.idempotencyKey }),
+  };
+}
+
+async function assertContentAadHash(metadata: ServerVisibleMessageMetadata, contentAadHash: string): Promise<void> {
+  const expected = await sha256Base64Url(owned(messageContentAadBytes(metadata)));
+  if (contentAadHash !== expected) {
+    throw new AppError(400, "invalid_content_aad_hash", "contentAadHash must match message metadata.");
+  }
+}
+
+async function assertMessageEnvelopeSignature(signingPublicKey: string, input: MessageSubmission, metadata: ServerVisibleMessageMetadata): Promise<void> {
+  const ok = await verifyEnvelopeSignature(
+    signingPublicKey,
+    messageEnvelopeSigningBytes({
+      schemaVersion: input.schemaVersion,
+      metadata,
+      ciphertext: input.ciphertext,
+      contentNonce: input.contentNonce,
+      contentAadHash: input.contentAadHash,
+      keyWraps: input.keyWraps,
+    }),
+    input.senderSignature,
+  );
+  if (!ok) throw new AppError(400, "invalid_sender_signature", "Message envelope sender signature is invalid.");
+}
+
+async function assertResponseEnvelopeSignature(signingPublicKey: string, messageId: string, input: ResponseSubmission): Promise<void> {
+  const ok = await verifyEnvelopeSignature(
+    signingPublicKey,
+    responseEnvelopeSigningBytes({ ...input, messageId }),
+    input.deviceSignature,
+  );
+  if (!ok) throw new AppError(400, "invalid_device_signature", "Response envelope device signature is invalid.");
+}
+
+async function verifyEnvelopeSignature(signingPublicKey: string, bytes: Uint8Array, signature: string): Promise<boolean> {
+  try {
+    return await verifyP256Sha256(await importSigningPublicKey(signingPublicKey), owned(bytes), signature);
+  } catch {
+    return false;
+  }
+}
+
+function owned(bytes: Uint8Array): Uint8Array<ArrayBuffer> {
+  return new Uint8Array(bytes);
 }

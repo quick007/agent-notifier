@@ -3,6 +3,7 @@ import { test } from "node:test";
 
 import {
   DOMAINS,
+  buildMessageEnvelopeSigningPayload,
   messageContentAadBytes,
   messageEnvelopeSigningBytes,
   messageEnvelopeSigningText,
@@ -55,13 +56,37 @@ test("message envelope signing bytes cover metadata, ciphertext, nonces, AAD has
   assert.equal(await verify(signingKeys.publicKey, messageEnvelopeSigningBytes({
     ...envelope,
     keyWraps: [keyWraps[1], keyWraps[0]],
-  }), signature), false);
+  }), signature), true);
+  assert.equal(messageEnvelopeSigningText(envelope), messageEnvelopeSigningText({
+    ...envelope,
+    keyWraps: [keyWraps[1], keyWraps[0]],
+  }));
   assert.equal(await verify(signingKeys.publicKey, messageEnvelopeSigningBytes({
     ...envelope,
     keyWraps: [{ ...keyWraps[0], wrappedKey: "wrapped_tampered" }, keyWraps[1]],
   }), signature), false);
   assert.ok(messageEnvelopeSigningText(envelope).startsWith(`${DOMAINS.MESSAGE_V1}\n`));
   assert.ok(messageContentAadBytes(metadata).byteLength > 0);
+});
+
+test("message key wraps sort with deterministic code-unit ordering", () => {
+  const payload = buildMessageEnvelopeSigningPayload({
+    schemaVersion: 1,
+    metadata,
+    ciphertext: "ciphertext",
+    contentNonce: "content_nonce",
+    contentAadHash: "metadata_aad_hash",
+    keyWraps: [
+      keyWrap("dev_z", "wrapped_z"),
+      keyWrap("dev_A", "wrapped_A"),
+    ],
+  });
+
+  assert.deepEqual(payload.keyWraps.map((wrap) => {
+    assert.equal(typeof wrap, "object");
+    assert.ok(wrap !== null && !Array.isArray(wrap));
+    return wrap.deviceId;
+  }), ["dev_A", "dev_z"]);
 });
 
 test("response signing bytes cover encrypted response fields only", async () => {

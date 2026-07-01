@@ -11,10 +11,12 @@ import {
 } from "../hono";
 import {
   AnyJsonResponseSchema,
+  DeviceSendersResponseSchema,
   DeviceRegistrationRequestSchema,
   IdResponseSchema,
   MessageId,
   MessageStateResponseSchema,
+  PendingMessagesResponseSchema,
   PushSubscriptionUpdateRequestSchema,
   PushSubscriptionUpdateResponseSchema,
   ResponseSubmissionRequestSchema,
@@ -61,7 +63,7 @@ export function registerDeviceRoutes<S extends Schema, BasePath extends string>(
       operationId: "listPendingMessages",
       middleware: deviceAuth,
       security: deviceSignedRequestSecurity,
-      responses: { 200: jsonContent(AnyJsonResponseSchema, "Pending encrypted messages."), ...errorResponses },
+      responses: { 200: jsonContent(PendingMessagesResponseSchema, "Pending encrypted messages."), ...errorResponses },
     }), async (c) => c.json({ messages: await pendingMessages(c.env, c.get("deviceAuth").deviceId) }, 200))
     .openapi(createRoute({
       method: "post",
@@ -93,7 +95,7 @@ export function registerDeviceRoutes<S extends Schema, BasePath extends string>(
       operationId: "listDeviceSenders",
       middleware: deviceAuth,
       security: deviceSignedRequestSecurity,
-      responses: { 200: jsonContent(AnyJsonResponseSchema, "Senders visible to this device."), ...errorResponses },
+      responses: { 200: jsonContent(DeviceSendersResponseSchema, "Senders visible to this device."), ...errorResponses },
     }), async (c) => c.json(await listSendersForDevice(c.env, c.get("deviceAuth").deviceId), 200))
     .openapi(createRoute({
       method: "post",

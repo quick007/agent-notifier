@@ -47,8 +47,8 @@ export type DeviceIdentity = {
   displayName: string;
   encryptionPublicKey: string;
   signingPublicKey: string;
-  encryptionPrivateKey: JsonWebKey;
-  signingPrivateKey: JsonWebKey;
+  encryptionPrivateKeyPkcs8: string;
+  signingPrivateKeyPkcs8: string;
   createdAt: string;
 };
 
@@ -68,6 +68,7 @@ export type Sender = {
   displayName: string;
   kind: SenderKind;
   machineLabel: string;
+  encryptionPublicKey?: string;
   lastUsedAt: string;
   previewPolicy: PreviewPolicy;
   revokedAt?: string;
