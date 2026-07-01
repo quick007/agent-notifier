@@ -1,0 +1,61 @@
+{
+  "name": "@agent-notifier/cli",
+  "version": "0.1.0",
+  "description": "Agent Notifier command-line interface for local agents and CI.",
+  "license": "MIT",
+  "author": "Agent Notifier maintainers",
+  "keywords": [
+    "agent-notifier",
+    "notifications",
+    "cli",
+    "agents"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/quick007/agent-notifier.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/quick007/agent-notifier#readme",
+  "bugs": {
+    "url": "https://github.com/quick007/agent-notifier/issues"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "default": "./dist/client.js"
+    }
+  },
+  "bin": {
+    "agent-notifier": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "package.json"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "pnpm build && pnpm exec vitest run --passWithNoTests",
+    "pack:dry-run": "npm pack --dry-run --json"
+  },
+  "dependencies": {
+    "@agent-notifier/crypto": "workspace:*",
+    "@agent-notifier/protocol": "workspace:*",
+    "hono": "4.12.27"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

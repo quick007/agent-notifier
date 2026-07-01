@@ -1,0 +1,47 @@
+{
+  "name": "@agent-notifier/protocol",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Canonical wire protocol helpers for Agent Notifier.",
+  "license": "MIT",
+  "author": "Agent Notifier maintainers",
+  "keywords": [
+    "agent-notifier",
+    "notifications",
+    "protocol",
+    "e2ee"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/quick007/agent-notifier.git",
+    "directory": "packages/protocol"
+  },
+  "homepage": "https://github.com/quick007/agent-notifier#readme",
+  "bugs": {
+    "url": "https://github.com/quick007/agent-notifier/issues"
+  },
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "pack:dry-run": "pnpm build && npm pack --dry-run --json",
+    "test": "pnpm build && node --test test/*.test.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  }
+}

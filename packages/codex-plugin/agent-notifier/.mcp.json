@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "agent-notifier": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@agent-notifier/mcp@latest",
+        "--stdio"
+      ],
+      "env_vars": [
+        "AGENT_NOTIFIER_API_URL",
+        "AGENT_NOTIFIER_CONFIG_DIR",
+        "AGENT_NOTIFIER_LOG_LEVEL"
+      ],
+      "startup_timeout_sec": 20,
+      "tool_timeout_sec": 120
+    }
+  }
+}

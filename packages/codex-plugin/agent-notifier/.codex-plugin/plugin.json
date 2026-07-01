@@ -1,0 +1,34 @@
+{
+  "name": "agent-notifier",
+  "version": "0.1.0",
+  "description": "Encrypted phone notifications and lightweight approvals for Codex.",
+  "author": {
+    "name": "Agent Notifier maintainers"
+  },
+  "license": "MIT",
+  "keywords": [
+    "notifications",
+    "approvals",
+    "mcp",
+    "codex"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Agent Notifier",
+    "shortDescription": "Send meaningful encrypted alerts from Codex.",
+    "longDescription": "Agent Notifier lets Codex use a local MCP server to send encrypted phone notifications, request short replies, and request lightweight approvals without giving the hosted service plaintext message content or sender private keys.",
+    "developerName": "Agent Notifier",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Set up Agent Notifier phone notifications.",
+      "Notify me when this task is done or blocked.",
+      "Ask for approval before the release step."
+    ],
+    "brandColor": "#2563EB"
+  }
+}

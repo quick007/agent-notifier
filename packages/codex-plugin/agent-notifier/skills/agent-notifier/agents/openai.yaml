@@ -1,0 +1,12 @@
+interface:
+  display_name: "Agent Notifier"
+  short_description: "Send meaningful encrypted phone alerts"
+  brand_color: "#2563EB"
+  default_prompt: "Use $agent-notifier to set up phone notifications for meaningful task updates."
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "agent-notifier"
+      description: "Local stdio MCP server that encrypts and signs Agent Notifier messages."
+      transport: "stdio"

@@ -1,0 +1,29 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# Publishable packages may depend on sibling packages by released semver
+# ranges; link matching local workspace packages during development.
+linkWorkspacePackages: true
+
+# pnpm 11 blocks dependency lifecycle scripts unless they are explicitly
+# reviewed. These are native/toolchain packages required by the current
+# Cloudflare Workers + Vite scaffold. Re-review lockfile changes that update
+# these packages or add new lifecycle-script packages.
+allowBuilds:
+  esbuild: true
+  sharp: true
+  workerd: true
+minimumReleaseAge: 1440
+minimumReleaseAgeExclude:
+  - '@cloudflare/vite-plugin@1.42.4'
+  - '@cloudflare/workerd-darwin-64@1.20260630.1'
+  - '@cloudflare/workerd-darwin-arm64@1.20260630.1'
+  - '@cloudflare/workerd-linux-64@1.20260630.1'
+  - '@cloudflare/workerd-linux-arm64@1.20260630.1'
+  - '@cloudflare/workerd-windows-64@1.20260630.1'
+  - '@cloudflare/workers-types@4.20260630.1'
+  - miniflare@4.20260630.0
+  - vite@8.1.2
+  - workerd@1.20260630.1
+  - wrangler@4.106.0

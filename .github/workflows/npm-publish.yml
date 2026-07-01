@@ -1,0 +1,81 @@
+name: npm Publish
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-pack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: pnpm
+          registry-url: "https://registry.npmjs.org"
+      - run: pnpm install --frozen-lockfile
+      - name: Validate release tag
+        if: github.event_name == 'push'
+        run: |
+          node -e "const fs=require('node:fs'); const version=process.env.GITHUB_REF_NAME.replace(/^v/,''); for (const file of ['package.json','packages/protocol/package.json','packages/crypto/package.json','packages/cli/package.json','packages/mcp/package.json']) { const manifest=JSON.parse(fs.readFileSync(file,'utf8')); if (manifest.version !== version) throw new Error(`${file} version ${manifest.version} does not match tag v${version}`); }"
+      - run: pnpm check
+      - name: Pack packages
+        run: |
+          set -euo pipefail
+          mkdir -p npm-artifacts
+          for package_dir in packages/protocol packages/crypto packages/cli packages/mcp; do
+            pnpm --dir "$package_dir" pack --json --pack-destination "$GITHUB_WORKSPACE/npm-artifacts"
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: npm-artifacts
+          path: npm-artifacts/*.tgz
+          retention-days: 7
+
+  publish:
+    needs: build-pack
+    runs-on: ubuntu-latest
+    environment: npm-publish
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+      - uses: actions/download-artifact@v4
+        with:
+          name: npm-artifacts
+          path: npm-artifacts
+      - name: Publish packages
+        run: |
+          set -euo pipefail
+          dry_run=false
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            dry_run=true
+          fi
+          if [ "$dry_run" = "false" ]; then
+            version="${GITHUB_REF_NAME#v}"
+            for artifact in npm-artifacts/*.tgz; do
+              case "$artifact" in
+                *-"$version".tgz) ;;
+                *) echo "Artifact $artifact does not match tag v$version"; exit 1 ;;
+              esac
+            done
+          fi
+          for package_name in agent-notifier-protocol agent-notifier-crypto agent-notifier-cli agent-notifier-mcp; do
+            tgz="$(ls "npm-artifacts/${package_name}-"*.tgz | head -n 1)"
+            if [ "$dry_run" = "true" ]; then
+              npm publish "$tgz" --access public --dry-run --ignore-scripts
+            else
+              npm publish "$tgz" --access public --provenance --ignore-scripts
+            fi
+          done

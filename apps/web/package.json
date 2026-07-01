@@ -1,0 +1,49 @@
+{
+  "name": "@agent-notifier/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./api-contract": {
+      "types": "./src/server/api-contract.ts"
+    }
+  },
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --config vitest.config.ts --passWithNoTests",
+    "cf-typegen": "wrangler types",
+    "wrangler:check": "wrangler check",
+    "deploy:dry-run": "vite build && wrangler deploy --dry-run --config dist/agent_notifier_web/wrangler.json",
+    "deploy": "vite build && wrangler deploy --config dist/agent_notifier_web/wrangler.json",
+    "d1:migrate:local": "wrangler d1 migrations apply agent-notifier --local --config wrangler.jsonc",
+    "d1:migrate:remote": "wrangler d1 migrations apply agent-notifier --remote --config wrangler.jsonc"
+  },
+  "dependencies": {
+    "@agent-notifier/emails": "workspace:*",
+    "@agent-notifier/protocol": "workspace:*",
+    "@base-ui-components/react": "1.0.0-rc.0",
+    "@block65/webcrypto-web-push": "1.0.2",
+    "@heroicons/react": "2.2.0",
+    "@hono/zod-openapi": "1.4.0",
+    "@scalar/hono-api-reference": "0.11.6",
+    "drizzle-orm": "0.45.2",
+    "hono": "4.12.27",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "1.42.4",
+    "@cloudflare/workers-types": "4.20260630.1",
+    "@tailwindcss/vite": "4.3.2",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "6.0.3",
+    "drizzle-kit": "0.31.10",
+    "tailwindcss": "4.3.2",
+    "vite": "8.1.2"
+  }
+}

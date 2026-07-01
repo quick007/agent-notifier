@@ -1,0 +1,48 @@
+{
+  "name": "agent-notifier",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Encrypted notifications and lightweight approvals for AI agents.",
+  "license": "MIT",
+  "author": "Agent Notifier maintainers",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/quick007/agent-notifier.git"
+  },
+  "bugs": {
+    "url": "https://github.com/quick007/agent-notifier/issues"
+  },
+  "homepage": "https://github.com/quick007/agent-notifier#readme",
+  "keywords": [
+    "agent",
+    "notifications",
+    "approvals",
+    "e2ee",
+    "mcp",
+    "cloudflare-workers"
+  ],
+  "type": "module",
+  "packageManager": "pnpm@11.7.0",
+  "engines": {
+    "node": ">=24.0.0",
+    "pnpm": ">=11.0.0"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @agent-notifier/web dev",
+    "build": "pnpm -r --if-present build",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "pnpm -r --if-present test",
+    "check:file-length": "tsx scripts/check-file-length.ts",
+    "check:packages": "node scripts/verify-packages.mjs",
+    "check": "pnpm typecheck && pnpm test && pnpm check:file-length && pnpm check:packages",
+    "deploy:web:dry-run": "pnpm --filter @agent-notifier/web deploy:dry-run",
+    "deploy:web": "pnpm --filter @agent-notifier/web deploy"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.2",
+    "tsx": "4.22.4",
+    "typescript": "6.0.3",
+    "vitest": "4.1.9",
+    "wrangler": "4.106.0"
+  }
+}
