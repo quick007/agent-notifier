@@ -1,5 +1,7 @@
 # Agent Notifier
 
+THIS IS VERY WIP! USE AT YOUR OWN RISK!
+
 Agent Notifier is an encrypted notification and lightweight approval product for
 AI agents.
 
