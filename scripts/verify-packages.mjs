@@ -19,7 +19,7 @@ const bannedScripts = new Set([
 const packageRoot = "packages";
 const packageOrder = ["protocol", "crypto", "cli", "mcp"];
 const publicRepositoryUrl = "git+https://github.com/quick007/agent-notifier.git";
-const publicHomepageUrl = "https://github.com/quick007/agent-notifier#readme";
+const publicHomepageUrl = "https://github.com/quick007/agent-notifier";
 const publicBugsUrl = "https://github.com/quick007/agent-notifier/issues";
 const approvedExternalRuntimeDeps = new Map([
   [

@@ -16,7 +16,7 @@
     "url": "git+https://github.com/quick007/agent-notifier.git",
     "directory": "packages/crypto"
   },
-  "homepage": "https://github.com/quick007/agent-notifier#readme",
+  "homepage": "https://github.com/quick007/agent-notifier",
   "bugs": {
     "url": "https://github.com/quick007/agent-notifier/issues"
   },
