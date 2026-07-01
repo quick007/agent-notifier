@@ -10,7 +10,6 @@ describe("sendSetupEmail", () => {
 
   it("uses the request public origin for setup and legal links", async () => {
     const requests: RequestInit[] = [];
-    vi.spyOn(Date.prototype, "toLocaleString").mockReturnValue("Jul 1, 2026, 12:30 AM");
     vi.stubGlobal("fetch", async (_url: string | URL | Request, init?: RequestInit) => {
       requests.push(init ?? {});
       return new Response("{}", { status: 200 });
@@ -32,6 +31,8 @@ describe("sendSetupEmail", () => {
     expect(body.html).toContain("https://notify.example/setup/pair/pair_123?secret=secret");
     expect(body.html).toContain("https://notify.example/terms");
     expect(body.html).toContain("https://notify.example/privacy");
+    expect(body.text).toContain("This link expires Jul 1, 2026");
+    expect(body.text).toContain("UTC");
     expect(body.text).toContain("Terms: https://notify.example/terms");
   });
 });

@@ -14,12 +14,15 @@ export interface RenderedEmail {
 
 export function renderSetupEmail(input: SetupEmailInput): RenderedEmail {
   const sender = input.senderDisplayName.trim() || "An agent";
-  const expiry = new Date(input.expiresAt).toLocaleString("en-US", {
-    dateStyle: "medium",
-    timeStyle: "short",
+  const expiry = new Intl.DateTimeFormat("en-US", {
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    month: "short",
     timeZone: "UTC",
     timeZoneName: "short",
-  });
+    year: "numeric",
+  }).format(new Date(input.expiresAt));
 
   return {
     subject: `${sender} wants to send secure notifications`,

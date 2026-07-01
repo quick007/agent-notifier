@@ -19,27 +19,17 @@ export async function startEmailPairing(env: Env, input: {
 }, publicOrigin: string) {
   const db = requireDatabase(env);
   const now = nowIso();
-  const recipientId = newId("rcp");
-  const emailId = newId("eml");
   const sessionId = newId("pair");
   const secret = randomSecret();
   const expiresAt = addSecondsIso(clampSeconds(input.requestedExpirySeconds, EMAIL_EXPIRY_SECONDS, MAX_EXPIRY_SECONDS));
   const normalizedEmail = input.email.trim().toLowerCase();
+  const recipientEmail = await getOrCreateRecipientEmail(db, input.email, normalizedEmail, now);
 
-  await db.insert(recipients).values({ id: recipientId, primaryEmailId: emailId, createdAt: now, updatedAt: now }).run();
-  await db.insert(recipientEmails).values({
-    id: emailId,
-    recipientId,
-    email: input.email,
-    normalizedEmail,
-    createdAt: now,
-    updatedAt: now,
-  }).run();
   await db.insert(pairingSessions).values({
     id: sessionId,
     kind: "email",
-    recipientId,
-    emailId,
+    recipientId: recipientEmail.recipientId,
+    emailId: recipientEmail.id,
     senderDraftJson: JSON.stringify(input.sender),
     magicLinkSecretHash: await sha256Base64Url(secret),
     expiresAt,
@@ -58,6 +48,39 @@ export async function startEmailPairing(env: Env, input: {
   });
 
   return { sessionId, expiresAt, status: "pending" as const };
+}
+
+async function getOrCreateRecipientEmail(
+  db: ReturnType<typeof requireDatabase>,
+  email: string,
+  normalizedEmail: string,
+  now: string,
+) {
+  const [existingEmail] = await db
+    .select({
+      id: recipientEmails.id,
+      recipientId: recipientEmails.recipientId,
+    })
+    .from(recipientEmails)
+    .where(eq(recipientEmails.normalizedEmail, normalizedEmail))
+    .limit(1)
+    .all();
+
+  if (existingEmail) return existingEmail;
+
+  const recipientId = newId("rcp");
+  const emailId = newId("eml");
+  await db.insert(recipients).values({ id: recipientId, primaryEmailId: emailId, createdAt: now, updatedAt: now }).run();
+  await db.insert(recipientEmails).values({
+    id: emailId,
+    recipientId,
+    email,
+    normalizedEmail,
+    createdAt: now,
+    updatedAt: now,
+  }).run();
+
+  return { id: emailId, recipientId };
 }
 
 export async function startCodePairing(env: Env) {
