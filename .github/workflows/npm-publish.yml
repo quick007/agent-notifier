@@ -101,6 +101,9 @@ jobs:
       contents: read
       id-token: write
     steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.merge_commit_sha || github.ref }}
       - uses: actions/setup-node@v6
         with:
           node-version: "24"
@@ -113,15 +116,4 @@ jobs:
       - name: Stage packages
         env:
           RELEASE_VERSION: ${{ needs.resolve-release.outputs.version }}
-        run: |
-          set -euo pipefail
-          for artifact in npm-artifacts/*.tgz; do
-            case "$artifact" in
-              *-"$RELEASE_VERSION".tgz) ;;
-              *) echo "Artifact $artifact does not match v$RELEASE_VERSION"; exit 1 ;;
-            esac
-          done
-          for package_name in agent-notifier-protocol agent-notifier-crypto agent-notifier-cli agent-notifier-mcp; do
-            tgz="$(ls "npm-artifacts/${package_name}-"*.tgz | head -n 1)"
-            npm stage publish "$tgz" --access public --provenance --ignore-scripts
-          done
+        run: node scripts/release/publish-npm-artifacts.mjs npm-artifacts

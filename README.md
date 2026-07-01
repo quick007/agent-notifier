@@ -1,16 +1,37 @@
 # Agent Notifier
 
-> [!WARNING]
-> THIS IS VERY WIP! USE AT YOUR OWN RISK!
-
-I had codex generate this project for me. Much of it is still incomplete/awaiting review. I would not trust this with sensitive data or daily workflows yet.
-
-Agent Notifier is an encrypted notification and lightweight approval product for
-AI agents.
+Agent Notifier is an encrypted notification and lightweight approval product for AI agents.
 
 It is for the moments when Codex, Claude, CI, or another local agent needs to say:
 "the task is done", "I am blocked", or "please approve or reject this action".
 It is not remote control, multi-turn chat, or a cloud-readable inbox.
+
+## Recommended Agent Setup
+
+Email pairing is the recommended setup flow. Copy one of these commands into an
+agent or terminal when the npm packages are published:
+
+```bash
+npx -y @agent-notifier/cli@latest setup
+npx -y @agent-notifier/cli@latest setup --email user@example.com
+npx -y @agent-notifier/cli@latest setup --code ABCD-1234
+```
+
+After pairing, agents should send only meaningful notifications, reply
+requests, or approval requests:
+
+```bash
+npx -y @agent-notifier/cli@latest notify \
+  --title "Task complete" \
+  --body "The run finished." \
+  --non-sensitive \
+  --wait-for delivered \
+  --json
+```
+
+These commands are the intended copy-paste interface, but npm publication is
+still pending. Package records currently return E404, and package bootstrap and
+trusted publisher setup are blocked on user-present npm 2FA verification.
 
 ## Current Status
 
@@ -23,11 +44,10 @@ Public source repository:
 [github.com/quick007/agent-notifier](https://github.com/quick007/agent-notifier).
 
 - `apps/web` is a Vite, React, Tailwind, and Cloudflare Worker app.
-- The Worker API contract should be owned by Hono/OpenAPIHono routes for
-  health, pairing, devices, senders, and API documentation.
-- Hono/Scalar API reference routes are generated from the route/schema layer and
-  served at `/docs`, backed by the Hono-derived OpenAPI 3.1 document at
-  `/openapi.json`.
+- The Worker API contract is owned by Hono/OpenAPIHono routes for health,
+  pairing, devices, senders, and API documentation.
+- Hono/Scalar API reference routes are served at `/docs`, backed by the
+  Hono-derived OpenAPI 3.1 document at `/openapi.json`.
 - Drizzle D1 schema and an initial migration exist under `apps/web`.
 - Backend modules cover pairing, devices, encrypted message envelopes, response
   storage, retention, Resend setup email, and Web Push wakeups.
@@ -51,12 +71,10 @@ Public source repository:
 - Resend setup email smoke tests delivered.
 - Real browser Web Push, decrypt, local store, and delivery-report device QA are
   not complete.
-- The npm scope `@agent-notifier` exists as a free public-package org, but
-  `@agent-notifier/protocol`, `@agent-notifier/crypto`,
-  `@agent-notifier/cli`, and `@agent-notifier/mcp` still return E404.
-  Package bootstrap and trusted publisher setup are blocked on user-present npm
-  2FA security-key/password verification, and Codex plugin install through the
-  published MCP package is not verified.
+- The npm scope `@agent-notifier` exists, but package records still return
+  E404. Bootstrap and trusted publisher setup are blocked on user-present npm
+  2FA verification, and Codex plugin install through the published MCP package
+  is not verified.
 
 ## Trust Boundary
 
@@ -78,13 +96,9 @@ delivery state, rate-limit counters, and aggregate counters. It must not see
 message titles, bodies, sensitive flags, replies, approval text, or approval
 decision details except as encrypted blobs.
 
-More detail:
-
-- [Security](docs/security.md)
-- [Privacy](docs/privacy.md)
-- [Terms](docs/terms.md)
-- API reference: `/docs`, or `/openapi.json` for the raw OpenAPI 3.1 document
-  generated from the Hono/OpenAPIHono route contract.
+See [Security](docs/security.md), [Privacy](docs/privacy.md), and
+[Terms](docs/terms.md). API reference is available at `/docs`, with the raw
+Hono/OpenAPIHono OpenAPI 3.1 document at `/openapi.json`.
 
 ## User Flows
 
@@ -114,26 +128,12 @@ Exact policy for agents:
 - Do not send routine progress spam unless the user asked for it.
 - Do not invent approval gates just because this tool exists.
 
-The local CLI implements the intended command shape with JSON output. Local
+The local CLI implements the intended command shape with JSON output. The
+recommended copy-paste commands are at the top of this README. Local
 configuration mode does not send setup email, store plaintext messages, or
 simulate remote delivery; live delivery requires a Worker API URL and paired
-sender:
-
-```bash
-npx -y @agent-notifier/cli@latest setup
-npx -y @agent-notifier/cli@latest setup --email user@example.com
-npx -y @agent-notifier/cli@latest setup --code ABCD-1234
-npx -y @agent-notifier/cli@latest notify \
-  --title "Task complete" \
-  --body "The run finished." \
-  --non-sensitive \
-  --wait-for delivered \
-  --json
-```
-
-These `npx` examples depend on npm publication. The npm scope exists, but the
-package records currently return E404, so use them as intended command shape
-until the first release.
+sender. The `npx` examples depend on npm publication, so use them as intended
+command shape until the first release.
 
 ## MCP And Agent Integrations
 

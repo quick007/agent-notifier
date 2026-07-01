@@ -6,9 +6,12 @@ material locally, so publishing must be tokenless, reproducible, and narrow.
 
 ## Required Posture
 
-- Stage releases with npm trusted publishing from GitHub Actions OIDC.
-- Stage with provenance enabled, then require maintainer approval before the
-  package becomes public.
+- Use npm trusted publishing from GitHub Actions OIDC.
+- For packages that already exist, stage with provenance enabled, then require
+  maintainer approval before the package becomes public.
+- CI must fail closed when npm returns E404 for a package. The first package
+  records must be created by a user-present npm maintainer with interactive
+  auth/2FA before CI staged publishing can be trusted.
 - Do not use long-lived `NPM_TOKEN` secrets for package publish.
 - Require npm account 2FA, disallow token publishing for public packages, and
   use least-privilege package/org ownership.
@@ -40,8 +43,9 @@ Publish order:
 2. Build CLI.
 3. Build MCP.
 4. Verify packed contents.
-5. Stage all public packages in one release batch, then approve staged packages
-   only after review.
+5. Stage all existing public packages in one release batch, then approve staged
+   packages only after review. If any package is E404, stop and complete the
+   maintainer-present package-record bootstrap first.
 
 The initial public package version is `0.1.0` across `@agent-notifier/protocol`,
 `@agent-notifier/crypto`, `@agent-notifier/cli`, and `@agent-notifier/mcp`.
@@ -78,15 +82,18 @@ still return E404. Package bootstrap and trusted publisher setup are blocked on
 user-present npm two-factor security-key/password verification.
 
 The release workflow installs and checks through Vite+, then packs with
-`vp pm pack` and stages the generated tarballs with `npm stage publish`. This
-keeps pnpm's workspace dependency rewrite while using npm CLI OIDC and
-provenance support for registry staging. The tag path and merged-PR path both
-stage through the protected `npm-publish` GitHub Environment. The manual
-workflow dispatch path builds, checks, packs, and runs `npm publish --dry-run`
-only; it does not receive OIDC permissions.
+`vp pm pack`. The publish job validates the generated tarballs against the
+known package allowlist and release version, checks npm for each package, and
+then stages existing packages with `npm stage publish`. E404 means the package
+record does not exist and the workflow fails closed. This keeps pnpm's
+workspace dependency rewrite while using npm CLI OIDC and provenance support
+for registry staging. The tag path and merged-PR path both stage through the
+protected `npm-publish` GitHub Environment. The manual workflow dispatch path
+builds, checks, packs, and runs `npm publish --dry-run` only; it does not
+receive OIDC permissions.
 
-The build/pack job does not receive OIDC. Only the staging job has
-`id-token: write`, downloads already-built tarballs, and runs
+The build/pack job does not receive OIDC. Only the publish job has
+`id-token: write`, downloads already-built tarballs, and runs `npm view` or
 `npm stage publish`.
 Both jobs install `npm@11.18.0` before publish-related commands because staged
 publishing requires npm 11.15.0 or newer.
@@ -101,11 +108,13 @@ existing `v*.*.*` tag path remains the deliberate way to create a permanent
 source marker for a package version after maintainers decide to use one.
 
 Staged publishing cannot create a brand-new npm package record. Before the first
-`v0.1.0` tag is pushed, each public package must already exist under the final
-scope and have trusted publishing configured. If npm cannot pre-create the
-package records through account settings, the bootstrap release needs a
-maintainer-approved one-time direct publish path; after that, switch trusted
-publisher permissions to stage-only and disallow traditional tokens.
+`v0.1.0` tag is pushed, each public package should already exist under the final
+scope when possible. If npm cannot pre-create the package records through
+account settings, a user-present npm maintainer must run a one-time direct
+publish with interactive auth/2FA to create the records. After all four package
+records exist, configure trusted publisher permissions as stage-only and
+disallow traditional tokens. Do not rely on the protected CI job to bootstrap
+E404 packages unless official npm docs prove that path is supported.
 
 GitHub Actions are intentionally not SHA-pinned for the initial `0.x` release
 lane while the workflow is still changing. The deliberate exception is limited
@@ -191,11 +200,14 @@ Mitigations in this repo:
   scope and enable trusted publishing for
   `https://github.com/quick007/agent-notifier`,
   `.github/workflows/npm-publish.yml`, and the `npm-publish` environment. This
-  requires user-present npm 2FA security-key/password verification. Configure
-  the trusted publisher allowed action as `npm stage publish` only, not direct
-  `npm publish`.
-- Confirm the package records already exist before relying on staged publishing.
-  Npm does not allow `npm stage publish` to create brand-new packages.
+  requires user-present npm 2FA security-key/password verification.
+- If npm cannot pre-create package records, run a one-time maintainer-present
+  direct publish for each `0.1.0` package to create the records, then configure
+  trusted publisher permissions as `npm stage publish` only.
+- Confirm the package records already exist before relying on CI staged
+  publishing. Npm does not allow `npm stage publish` to create brand-new
+  packages, and current npm trusted-publisher configuration also requires the
+  package record to exist.
 - Protect the GitHub `npm-publish` environment with required reviewers.
 - Restrict npm package publishing access to require 2FA and disallow tokens.
 - Confirm package names, scope ownership, 2FA policy, and first public version.
