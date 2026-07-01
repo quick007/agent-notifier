@@ -44,7 +44,9 @@ Hono-derived OpenAPI document instead of duplicating route contracts.
 
 The Worker deployment is live. Product readiness is still incomplete because
 package publication, plugin install through the published MCP package, and real
-browser push/decrypt/device delivery QA are not complete.
+Web Push wakeup/phone notification delivery are not verified. Live browser/CLI
+encrypted delivery, browser decrypt/local store/render, and reply/approval
+response paths have been verified against the deployed Worker.
 
 - `wrangler.jsonc` declares D1 binding `DB` for database `agent-notifier` with
   id `c1c7a3ff-9456-48db-8f6c-e7c9fd3d472d`.
@@ -152,12 +154,13 @@ do not reject message creation, but push attempts are recorded as
 
 Email rendering, backend route code, and the Resend adapter exist. Worker
 secrets are configured, remote D1 migrations are clean, the Worker is deployed,
-and Resend setup email smoke tests delivered. Do not claim full setup readiness
-until phone pairing and device-side delivery behavior are tested end to end.
+and Resend setup email smoke tests delivered. Live browser/CLI encrypted
+delivery, browser decrypt/local store/render, and reply/approval response paths
+have been verified against the deployed Worker.
 
-Web Push wakeup code exists and uses VAPID settings. Do not claim phone delivery
-until push subscriptions, wakeup delivery, local decrypt/store, and delivery
-reporting are tested on real browser devices.
+Web Push wakeup code exists and uses VAPID settings. Do not claim phone
+notification delivery until real Web Push wakeup and notification display are
+tested on phone devices.
 
 ## Packages
 
@@ -216,8 +219,9 @@ Before any production-ready or public-package claim, verify:
 - Worker deploy through `vp run -w deploy:web`, which uses the generated Vite+ Worker
   config
 - Resend setup email with real credentials
-- Web Push wakeup behavior with real VAPID keys
-- PWA fetch/decrypt/deliver/report flow on a real browser device
+- Browser/CLI encrypted delivery, local decrypt/store/render, and
+  reply/approval response flow against the deployed Worker
+- Real Web Push wakeup and phone notification delivery with real VAPID keys
 - Cloudflare deploy and live `/api/health` smoke test
 - Live `/docs` reference and Hono-derived `/openapi.json` smoke tests
 - Custom domain or route configuration

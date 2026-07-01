@@ -1,9 +1,10 @@
 # Codex Plugin
 
 Status: plugin bundle scaffolded; `packages/mcp` exposes an implemented local
-stdio MCP server with Agent Notifier tools. The published
-`@agent-notifier/mcp` package, live API transport, and end-to-end plugin launch
-path are not verified yet.
+stdio MCP server with Agent Notifier tools. Live CLI/browser E2EE transport has
+been verified against the deployed Worker, but the published
+`@agent-notifier/mcp` package and end-to-end plugin launch path are not verified
+yet.
 
 ## Bundle
 

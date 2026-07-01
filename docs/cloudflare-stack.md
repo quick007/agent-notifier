@@ -33,8 +33,9 @@ surface, and OpenAPI document stay aligned.
   `VAPID_PRIVATE_KEY`, and `VAPID_SUBJECT` are configured.
 - `APP_PUBLIC_URL` is not used; links derive from request origin.
 - Resend setup email smoke tests delivered.
-- Real browser Web Push, decrypt, local store, and delivery-report QA is still
-  incomplete.
+- Live browser/CLI encrypted delivery, browser decrypt/local store/render, and
+  reply/approval response paths have been verified against the deployed Worker.
+- Real Web Push wakeup and phone notification delivery remain pending.
 
 ## Wrangler Configuration
 
@@ -130,9 +131,10 @@ vp run -w build
 vp run -w check
 ```
 
-Before a production-ready claim, still verify Web Push on real devices and the
-PWA fetch/decrypt/store/report behavior. Re-run live `/api/health`, `/docs`,
-and `/openapi.json` smoke tests after deployments or routing changes.
+Before a phone notification delivery claim, still verify real Web Push wakeup
+and notification display on phone devices. Re-run live `/api/health`, `/docs`,
+`/openapi.json`, and encrypted browser/CLI flow smoke tests after deployments
+or routing changes.
 
 ## Guardrails
 

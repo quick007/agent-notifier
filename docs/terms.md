@@ -1,6 +1,6 @@
 # Terms
 
-Status: launch-copy draft. Legal review is required before public launch.
+These terms describe the expected use of Agent Notifier.
 
 ## What Agent Notifier Does
 
@@ -63,7 +63,6 @@ financial, medical, or legal workflows.
 
 ## Changes
 
-These terms will change before launch. Product behavior, retention, package
-names, and deployment details should be verified against the current
-implementation before public use.
-
+These terms may change as Agent Notifier evolves. Product behavior, retention,
+package names, and deployment details should be verified against the current
+implementation before relying on them for a specific workflow.

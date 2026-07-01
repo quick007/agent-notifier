@@ -1,8 +1,7 @@
 # Security
 
-Status: launch-copy draft. This page describes the intended security model and
-current repository posture. It still needs implementation review and security
-review before public launch.
+This page describes Agent Notifier's security model, trust boundary, and
+reporting channel.
 
 ## Promise
 
@@ -54,7 +53,10 @@ canonicalization, signing domains, P-256 keys, AES-GCM helpers, HKDF helpers,
 base64url encoding, hashing, envelope sealing, and signatures. It also includes
 backend modules for encrypted envelope storage, pairing, response storage,
 retention, Resend setup email, and Web Push wakeups, plus local CLI/MCP source.
-End-to-end deployed delivery to a real device still needs verification.
+Live encrypted code pairing, PWA inbox decrypt/store, delivered reporting, CLI
+status polling, and CLI reply/approval response decryption are verified against
+the deployed Worker. Real phone/browser Web Push permission and wakeup delivery
+still need device verification.
 
 ## Approval Boundary
 
@@ -89,12 +91,20 @@ provenance is not established yet.
 
 ## Report A Security Issue
 
-Security contact is not finalized. Until it is, do not publish this page as the
-final public reporting channel.
+Please report suspected vulnerabilities to `agent-notify@seufert.sh`.
 
-Before launch, add:
+Good reports include a concise description, affected component or route, impact,
+reproduction steps, and whether any accounts, devices, or message envelopes may
+be affected. Please avoid public issue reports for sensitive vulnerabilities
+until we have had time to investigate and fix them.
 
-- Security contact email.
-- Expected response window.
-- Supported reporting scope.
-- PGP or secure contact option if available.
+In scope:
+
+- Message encryption, signing, verification, and key handling.
+- Pairing, sender/device authorization, revocation, and delivery APIs.
+- PWA/service worker behavior that could expose private keys or decrypted data.
+- Server handling of encrypted envelopes, metadata, retention, and rate limits.
+- Package supply-chain or release issues affecting Agent Notifier packages.
+
+We aim to acknowledge security reports within 3 business days and provide an
+initial assessment or follow-up questions within 10 business days.

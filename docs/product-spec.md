@@ -2,7 +2,7 @@
 
 Status: product source of truth and implementation reference
 Repository: `agent-notifier`
-Product name: placeholder
+Product name: Agent Notifier
 Last updated: 2026-06-30
 
 ## 1. Summary
@@ -1352,7 +1352,9 @@ These should be resolved before public launch:
 5. Decide whether Workflows are worth using for reply/approval expiry or whether D1 + scheduled jobs are simpler.
 6. Confirm npm package scope, trusted publisher setup, and first public version.
 7. Complete legal/security review of Terms, Privacy, and Security pages.
-8. Complete live Cloudflare deploy, D1 migration, Resend, Web Push, and end-to-end setup verification.
+8. Complete phone/browser Web Push delivery verification; live Cloudflare deploy,
+   D1 migration, Resend setup email, and encrypted browser/CLI setup-response
+   flow have been verified.
 
 ## 18. Reference Material
 

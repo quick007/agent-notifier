@@ -1,6 +1,7 @@
 # Privacy
 
-Status: launch-copy draft. This is product copy, not final legal text.
+This page explains Agent Notifier's privacy boundary and the data needed to
+operate encrypted agent-to-human notifications.
 
 ## Short Version
 
@@ -63,8 +64,9 @@ fetches it, the sender can see `expired` and the recipient sees nothing.
 The intended local inbox retention is 30 days by default for unsaved messages.
 Saved messages remain on the device until unsaved or deleted.
 
-These retention settings are part of the product design and must be verified
-against the implementation before public launch.
+These retention settings are part of the product design and should be verified
+against the current implementation before relying on them for a specific
+workflow.
 
 ## Email
 
@@ -88,4 +90,3 @@ The product should let users:
 
 Revoking a sender prevents future sends through Agent Notifier. It does not
 delete local files that may still exist on the sender machine.
-

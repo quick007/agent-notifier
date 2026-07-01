@@ -24,7 +24,8 @@ const content: Record<LegalRoute, LegalContent> = {
     body: [
       "The PWA owns device keys and decrypts messages locally. App-origin XSS is treated as a crypto boundary.",
       "Approval and reply responses should be encrypted to the sender and signed by this device.",
-      "Agent Notifier returns signed human intent. It does not run actions for the agent."
+      "Agent Notifier returns signed human intent. It does not run actions for the agent.",
+      "Report suspected vulnerabilities to agent-notify@seufert.sh. Include affected routes or components, impact, and reproduction steps when possible."
     ],
     table: [
       ["Content", "Encrypted before it reaches the service."],

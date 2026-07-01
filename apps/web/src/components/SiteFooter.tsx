@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 
-import { DOCS_URL, GITHUB_URL } from "../lib/links";
+import { DOCS_URL, GITHUB_URL, LICENSE_URL } from "../lib/links";
 import { cn } from "./ui";
 
 type FooterLink = { label: string; to: string; external?: boolean };
@@ -9,6 +9,7 @@ const links: FooterLink[] = [
   { label: "Privacy", to: "/privacy" },
   { label: "Security", to: "/security" },
   { label: "Terms", to: "/terms" },
+  { label: "MIT License", to: LICENSE_URL, external: true },
   { label: "API reference", to: DOCS_URL, external: true },
   { label: "GitHub", to: GITHUB_URL, external: true }
 ];

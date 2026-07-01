@@ -119,8 +119,11 @@ Current route families:
 - D1 migrations must still be applied whenever schema changes land.
 - No Queue binding is configured; push fanout currently runs through
   `ctx.waitUntil`.
-- Real browser push, service-worker fetch/decrypt/store, and delivery reporting
-  still need end-to-end device QA.
+- Live browser/CLI encrypted delivery, browser fetch/decrypt/local
+  store/render, and reply/approval response paths have been verified against the
+  deployed Worker.
+- Real Web Push wakeup and phone notification delivery still need end-to-end
+  device QA.
 - The npm scope `@agent-notifier` exists as a free public-package org, but
   `@agent-notifier/protocol`, `@agent-notifier/crypto`,
   `@agent-notifier/cli`, and `@agent-notifier/mcp` still return E404.
@@ -144,6 +147,6 @@ vp run -w check
 ```
 
 These checks are local verification only. They do not prove live Cloudflare
-deployment health, Resend delivery, Web Push delivery, npm publication, or
-plugin install readiness unless those live checks are run separately for the
+deployment health, Resend delivery, phone Web Push delivery, npm publication,
+or plugin install readiness unless those live checks are run separately for the
 current release.
