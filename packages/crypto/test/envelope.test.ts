@@ -99,8 +99,14 @@ test("sealed content decrypts only with matching AAD and rejects tampering", asy
 });
 
 async function assertNonExtractable(privateKey: CryptoKey): Promise<void> {
+  assert.equal(privateKey.extractable, false);
   await assert.rejects(
     () => exportPrivateKeyPkcs8(privateKey),
-    (error) => error instanceof DOMException && error.name === "InvalidAccessException",
+    (error) => {
+      const name = typeof error === "object" && error !== null && "name" in error
+        ? error.name
+        : undefined;
+      return name === "InvalidAccessError" || name === "InvalidAccessException";
+    },
   );
 }
