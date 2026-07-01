@@ -10,7 +10,6 @@ import {
   type OpenApiApp,
 } from "../hono";
 import {
-  AnyJsonResponseSchema,
   DeviceSendersResponseSchema,
   DeviceRegistrationRequestSchema,
   IdResponseSchema,
@@ -20,7 +19,9 @@ import {
   PushSubscriptionUpdateRequestSchema,
   PushSubscriptionUpdateResponseSchema,
   ResponseSubmissionRequestSchema,
+  ResponseStoredResponseSchema,
   SenderId,
+  SenderRevokeResponseSchema,
   toDeviceRegistration,
 } from "../schemas";
 import {
@@ -83,7 +84,7 @@ export function registerDeviceRoutes<S extends Schema, BasePath extends string>(
       middleware: deviceAuth,
       security: deviceSignedRequestSecurity,
       request: { params: messageParams, body: jsonRequest(ResponseSubmissionRequestSchema) },
-      responses: { 201: jsonContent(AnyJsonResponseSchema, "Encrypted response stored."), ...errorResponses },
+      responses: { 201: jsonContent(ResponseStoredResponseSchema, "Encrypted response stored."), ...errorResponses },
     }), async (c) => {
       const auth = c.get("deviceAuth");
       return c.json(await submitResponse(c.env, auth.deviceId, auth.recipientId, c.req.valid("param").messageId, c.req.valid("json")), 201);
@@ -105,6 +106,6 @@ export function registerDeviceRoutes<S extends Schema, BasePath extends string>(
       middleware: deviceAuth,
       security: deviceSignedRequestSecurity,
       request: { params: senderParams },
-      responses: { 200: jsonContent(AnyJsonResponseSchema, "Sender revoked."), ...errorResponses },
+      responses: { 200: jsonContent(SenderRevokeResponseSchema, "Sender revoked."), ...errorResponses },
     }), async (c) => c.json(await revokeSender(c.env, c.req.valid("param").senderId, c.get("deviceAuth").recipientId), 200));
 }

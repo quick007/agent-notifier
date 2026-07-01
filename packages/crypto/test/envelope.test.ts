@@ -6,6 +6,7 @@ import {
   canonicalBytes,
   exportPrivateKeyPkcs8,
   exportPublicKeySpki,
+  fromBase64Url,
   generateEncryptionKeyPair,
   generateSigningKeyPair,
   importEncryptionPrivateKey,
@@ -15,6 +16,7 @@ import {
   sealContentForDevices,
   sha256Base64Url,
   signP256Sha256,
+  toBase64Url,
   utf8ToBytes,
   verifyP256Sha256,
 } from "./helpers.ts";
@@ -88,15 +90,25 @@ test("sealed content decrypts only with matching AAD and rejects tampering", asy
     /AAD hash mismatch/,
   );
   await assert.rejects(
-    () => openContentFromDeviceWrap({ ...sealed, ciphertext: `${sealed.ciphertext.slice(0, -1)}A` }, sealed.keyWraps[0], recipient.privateKey, aad),
+    () => openContentFromDeviceWrap({ ...sealed, ciphertext: flipBase64UrlByte(sealed.ciphertext) }, sealed.keyWraps[0], recipient.privateKey, aad),
   );
   await assert.rejects(
-    () => openContentFromDeviceWrap(sealed, { ...sealed.keyWraps[0], wrapNonce: "8PHy8_T19vf4-fr7" }, recipient.privateKey, aad),
+    () => openContentFromDeviceWrap({ ...sealed, contentNonce: flipBase64UrlByte(sealed.contentNonce) }, sealed.keyWraps[0], recipient.privateKey, aad),
   );
   await assert.rejects(
-    () => openContentFromDeviceWrap(sealed, { ...sealed.keyWraps[0], wrappedKey: `${sealed.keyWraps[0].wrappedKey.slice(0, -1)}A` }, recipient.privateKey, aad),
+    () => openContentFromDeviceWrap(sealed, { ...sealed.keyWraps[0], wrapNonce: flipBase64UrlByte(sealed.keyWraps[0].wrapNonce) }, recipient.privateKey, aad),
+  );
+  await assert.rejects(
+    () => openContentFromDeviceWrap(sealed, { ...sealed.keyWraps[0], wrappedKey: flipBase64UrlByte(sealed.keyWraps[0].wrappedKey) }, recipient.privateKey, aad),
   );
 });
+
+function flipBase64UrlByte(value: string): string {
+  const bytes = fromBase64Url(value);
+  assert.notEqual(bytes.byteLength, 0);
+  bytes[0] ^= 1;
+  return toBase64Url(bytes);
+}
 
 async function assertNonExtractable(privateKey: CryptoKey): Promise<void> {
   assert.equal(privateKey.extractable, false);

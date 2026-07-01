@@ -77,6 +77,9 @@ type ApiSchema = {
   "/api/senders/messages/:messageId/status": {
     $get: JsonEndpoint<{ param: { messageId: string } }, Record<string, unknown>, 200>;
   };
+  "/api/senders/messages/:messageId/response": {
+    $get: JsonEndpoint<{ param: { messageId: string } }, Record<string, unknown>, 200>;
+  };
 };
 
 type EmptyEnv = {};
@@ -97,6 +100,7 @@ export interface AgentNotifierApiClient {
         $post(input: { json: MessageSubmissionEnvelope }): Promise<ClientResponseJson<MessageStateJson>>;
         ":messageId": {
           status: Pick<ClientEndpoint<{ param: { messageId: string } }, Record<string, unknown>>, "$get" | "$url">;
+          response: Pick<ClientEndpoint<{ param: { messageId: string } }, Record<string, unknown>>, "$get" | "$url">;
         };
       };
     };

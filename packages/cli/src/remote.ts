@@ -241,7 +241,8 @@ async function withRemoteResponse(
   knownDevices: readonly MessageTargetDevice[],
 ): Promise<AgentNotifierResult> {
   try {
-    const path = `/api/senders/messages/${encodeURIComponent(messageId)}/response`;
+    const endpoint = createApiClient(apiUrl).api.senders.messages[":messageId"].response;
+    const path = endpointPath(endpoint.$url({ param: { messageId } }));
     const json = await signedFetch({ apiUrl, sender, method: "GET", path });
     const envelope = parseResponseEnvelope(json);
     const devices = knownDevices.length > 0

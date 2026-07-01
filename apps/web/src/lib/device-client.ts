@@ -1,10 +1,11 @@
 import { DOMAINS, SIGNED_REQUEST_HEADERS, canonicalJson, canonicalRequestBytes, canonicalSigningBytes, messageContentAadBytes, messageEnvelopeSigningBytes, responseEnvelopeSigningBytes, type DeviceKeyWrap, type MessagePlaintext, type ResponseKind, type ResponsePlaintext, type ServerVisibleMessageMetadata } from "@agent-notifier/protocol";
 import { bytesToUtf8, exportPrivateKeyPkcs8, exportPublicKeySpki, generateEncryptionKeyPair, generateSigningKeyPair, importEncryptionPrivateKey, importEncryptionPublicKey, importSigningPrivateKey, importSigningPublicKey, openContentFromDeviceWrap, randomBytes, sealContentForDevices, sha256Base64Url, signP256Sha256, toBase64Url, utf8ToBytes, verifyP256Sha256 } from "@agent-notifier/crypto";
-import type { DeviceIdentity, Message, PairingState, PreviewPolicy, Sender } from "../types";
+import type { DeviceIdentity, Message, PairingState, Sender } from "../types";
+import { apiClient, endpointPath, jsonOrThrow } from "./api-client";
+import { apiSenderToLocal, requestToLocal, type ApiSenderDraft } from "./device-client-mappers";
 
 type JsonObject = Record<string, unknown>;
 type PairingStatusJson = { status: "not_found" | "expired" | "paired" | "claimed" | "pending"; expiresAt?: string; recipientId?: string; sender?: ApiSenderDraft };
-type ApiSenderDraft = { displayName?: string; kind?: string; machineLabel?: string; previewPolicy?: string; revokedAt?: string; lastUsedAt?: string; encryptionPublicKey?: string };
 type PendingApiMessage = { messageId: string; metadata: ServerVisibleMessageMetadata; ciphertext: string; contentNonce: string; contentAadHash: string; senderSignature: string; sender: ApiSenderDraft & { senderId: string; signingPublicKey: string; encryptionPublicKey: string }; keyWrap?: DeviceKeyWrap; keyWraps?: readonly DeviceKeyWrap[] };
 export type DecodedPendingMessage = { message: Message; sender: Sender };
 export type MessageResponseDraft = { kind: "reply"; text: string } | { kind: "approval"; decision: "approved" | "rejected"; text?: string };
@@ -24,7 +25,7 @@ export async function createDeviceIdentity(displayName: string): Promise<DeviceI
 }
 
 export async function startCodePairing(): Promise<PairingState> {
-  const json = await jsonFetch<JsonObject>("/api/pairing/code/start", { method: "POST" });
+  const json = await jsonOrThrow<JsonObject>(await apiClient().api.pairing.code.start.$post());
   return {
     status: "code_ready",
     kind: "code",
@@ -37,14 +38,15 @@ export async function startCodePairing(): Promise<PairingState> {
 
 export async function getPairingStatus(pairing: PairingState): Promise<PairingStatusJson> {
   if (!pairing.sessionId) throw new Error("Pairing session is missing.");
-  const query = pairing.secret ? `?secret=${encodeURIComponent(pairing.secret)}` : "";
-  return jsonFetch<PairingStatusJson>(`/api/pairing/${pairing.sessionId}/status${query}`);
+  return jsonOrThrow<PairingStatusJson>(await apiClient().api.pairing[":sessionId"].status.$get({
+    param: { sessionId: pairing.sessionId },
+    query: pairing.secret ? { secret: pairing.secret } : {}
+  }));
 }
 
 export async function registerDevice(input: { device: DeviceIdentity; pairing: PairingState; recipientId?: string }): Promise<DeviceIdentity> {
-  const json = await jsonFetch<JsonObject>("/api/devices/register", {
-    method: "POST",
-    body: JSON.stringify({
+  const json = await jsonOrThrow<JsonObject>(await apiClient().api.devices.register.$post({
+    json: {
       ...(input.recipientId ? {
         recipientId: input.recipientId,
         pairingSessionId: input.pairing.sessionId,
@@ -55,19 +57,23 @@ export async function registerDevice(input: { device: DeviceIdentity; pairing: P
         encryptionPublicKey: input.device.encryptionPublicKey,
         signingPublicKey: input.device.signingPublicKey
       }
-    }),
-    headers: { "content-type": "application/json" }
-  });
+    }
+  }));
   return { ...input.device, recipientId: readString(json, "recipientId"), deviceId: readString(json, "deviceId") };
 }
 
 export async function approvePairing(device: DeviceIdentity, pairing: PairingState) {
   if (!pairing.sessionId) throw new Error("Pairing session is missing.");
-  return signedDeviceFetch<JsonObject>(device, "POST", `/api/pairing/${pairing.sessionId}/approve`, pairing.secret ? { secret: pairing.secret } : {});
+  return signedDeviceFetch<JsonObject>(
+    device,
+    "POST",
+    apiClient().api.pairing[":sessionId"].approve.$url({ param: { sessionId: pairing.sessionId } }),
+    pairing.secret ? { secret: pairing.secret } : {}
+  );
 }
 
 export async function listSenders(device: DeviceIdentity): Promise<Sender[]> {
-  const json = await signedDeviceFetch<{ senders?: ApiSenderDraft[] }>(device, "GET", "/api/devices/senders");
+  const json = await signedDeviceFetch<{ senders?: ApiSenderDraft[] }>(device, "GET", apiClient().api.devices.senders.$url());
   return (json.senders ?? []).map((sender) => apiSenderToLocal(sender));
 }
 
@@ -75,14 +81,14 @@ export async function updatePushSubscription(device: DeviceIdentity, pushSubscri
   const json = await signedDeviceFetch<{ pushEnabled?: boolean }>(
     device,
     "POST",
-    "/api/devices/push-subscription",
+    apiClient().api.devices["push-subscription"].$url(),
     { pushSubscription }
   );
   return json.pushEnabled === true;
 }
 
 export async function fetchPendingMessages(device: DeviceIdentity): Promise<DecodedPendingMessage[]> {
-  const json = await signedDeviceFetch<{ messages?: unknown[] }>(device, "GET", "/api/devices/messages/pending");
+  const json = await signedDeviceFetch<{ messages?: unknown[] }>(device, "GET", apiClient().api.devices.messages.pending.$url());
   const decoded: DecodedPendingMessage[] = [];
   for (const pending of (json.messages ?? []).filter(isPendingApiMessage)) {
     decoded.push(await decryptPendingMessage(device, pending));
@@ -91,10 +97,20 @@ export async function fetchPendingMessages(device: DeviceIdentity): Promise<Deco
 }
 
 export async function markDelivered(device: DeviceIdentity, messageId: string) {
-  await signedDeviceFetch(device, "POST", `/api/devices/messages/${messageId}/delivered`, {});
+  await signedDeviceFetch(
+    device,
+    "POST",
+    apiClient().api.devices.messages[":messageId"].delivered.$url({ param: { messageId } }),
+    {}
+  );
 }
 export async function revokeSender(device: DeviceIdentity, senderId: string) {
-  await signedDeviceFetch(device, "POST", `/api/devices/senders/${senderId}/revoke`, {});
+  await signedDeviceFetch(
+    device,
+    "POST",
+    apiClient().api.devices.senders[":senderId"].revoke.$url({ param: { senderId } }),
+    {}
+  );
 }
 
 export async function submitMessageResponse(
@@ -120,7 +136,7 @@ export async function submitMessageResponse(
     await importSigningPrivateKey(device.signingPrivateKeyPkcs8),
     owned(responseEnvelopeSigningBytes(signingEnvelope))
   );
-  await signedDeviceFetch(device, "POST", `/api/devices/messages/${message.id}/respond`, {
+  await signedDeviceFetch(device, "POST", apiClient().api.devices.messages[":messageId"].respond.$url({ param: { messageId: message.id } }), {
     schemaVersion: 1,
     responseId,
     kind,
@@ -172,8 +188,9 @@ async function decryptPendingMessage(device: DeviceIdentity, pending: PendingApi
   };
 }
 
-async function signedDeviceFetch<T>(device: DeviceIdentity, method: "GET" | "POST", path: string, body?: unknown): Promise<T> {
+async function signedDeviceFetch<T>(device: DeviceIdentity, method: "GET" | "POST", url: URL, body?: unknown): Promise<T> {
   if (!device.deviceId) throw new Error("Device is not registered.");
+  const path = endpointPath(url);
   const bodyText = body === undefined ? "" : JSON.stringify(body);
   const timestamp = new Date().toISOString();
   const nonce = toBase64Url(randomBytes(16));
@@ -187,7 +204,7 @@ async function signedDeviceFetch<T>(device: DeviceIdentity, method: "GET" | "POS
     subjectType: "device",
     subjectId: device.deviceId
   })));
-  return jsonFetch<T>(path, {
+  const response = await fetch(url, {
     method,
     headers: {
       "content-type": "application/json",
@@ -198,38 +215,7 @@ async function signedDeviceFetch<T>(device: DeviceIdentity, method: "GET" | "POS
     },
     ...(body === undefined ? {} : { body: bodyText })
   });
-}
-
-async function jsonFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(path, init);
-  const json = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(`API ${response.status}: ${JSON.stringify(json)}`);
-  return json as T;
-}
-
-function apiSenderToLocal(sender: ApiSenderDraft & { id?: string; senderId?: string }, lastUsedAt?: string): Sender {
-  return {
-    id: sender.id ?? sender.senderId ?? "snd_unknown",
-    displayName: sender.displayName ?? "Paired agent",
-    kind: sender.kind === "codex" || sender.kind === "claude" || sender.kind === "ci" ? sender.kind : "generic",
-    machineLabel: sender.machineLabel ?? "",
-    lastUsedAt: sender.lastUsedAt ?? lastUsedAt ?? new Date().toISOString(),
-    previewPolicy: previewPolicy(sender.previewPolicy),
-    ...(sender.revokedAt ? { revokedAt: sender.revokedAt } : {}),
-    ...(sender.encryptionPublicKey ? { encryptionPublicKey: sender.encryptionPublicKey } : {}),
-    capabilities: { notify: true, requestReply: true, requestApproval: true }
-  };
-}
-
-function previewPolicy(value: unknown): PreviewPolicy {
-  if (value === "always_hide") return "always_hide";
-  if (value === "allow_agent_choice") return "agent_choice";
-  return "hide_sensitive";
-}
-
-function requestToLocal(request: NonNullable<MessagePlaintext["request"]>): NonNullable<Message["request"]> {
-  if (request.kind === "reply") return { ...(request.prompt ? { prompt: request.prompt } : {}) };
-  return { actionLabel: request.actionLabel, ...(request.riskText ? { riskText: request.riskText } : {}) };
+  return jsonOrThrow<T>(response);
 }
 
 function responsePlaintext(messageId: string, draft: MessageResponseDraft, respondedAt: string): ResponsePlaintext {

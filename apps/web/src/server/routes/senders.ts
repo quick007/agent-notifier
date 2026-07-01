@@ -10,9 +10,11 @@ import {
   type OpenApiApp,
 } from "../hono";
 import {
-  AnyJsonResponseSchema,
+  MessageEventsResponseSchema,
   MessageId,
+  MessageResponseEnvelopeSchema,
   MessageStateResponseSchema,
+  MessageStatusResponseSchema,
   MessageSubmissionRequestSchema,
   SenderTargetResponseSchema,
   toMessageSubmission,
@@ -74,7 +76,7 @@ export function registerSenderRoutes<S extends Schema, BasePath extends string>(
       middleware: senderAuth,
       security: senderSignedRequestSecurity,
       request: { params: messageParams },
-      responses: { 200: jsonContent(AnyJsonResponseSchema, "Current message state."), ...errorResponses },
+      responses: { 200: jsonContent(MessageStatusResponseSchema, "Current message state."), ...errorResponses },
     }), async (c) => c.json(await messageStatus(c.env, c.get("senderAuth").senderId, c.req.valid("param").messageId), 200))
     .openapi(createRoute({
       method: "get",
@@ -84,7 +86,7 @@ export function registerSenderRoutes<S extends Schema, BasePath extends string>(
       middleware: senderAuth,
       security: senderSignedRequestSecurity,
       request: { params: messageParams },
-      responses: { 200: jsonContent(AnyJsonResponseSchema, "Delivery events."), ...errorResponses },
+      responses: { 200: jsonContent(MessageEventsResponseSchema, "Delivery events."), ...errorResponses },
     }), async (c) => c.json(await messageEvents(c.env, c.get("senderAuth").senderId, c.req.valid("param").messageId), 200))
     .openapi(createRoute({
       method: "get",
@@ -94,6 +96,6 @@ export function registerSenderRoutes<S extends Schema, BasePath extends string>(
       middleware: senderAuth,
       security: senderSignedRequestSecurity,
       request: { params: messageParams },
-      responses: { 200: jsonContent(AnyJsonResponseSchema, "Encrypted response envelope."), ...errorResponses },
+      responses: { 200: jsonContent(MessageResponseEnvelopeSchema, "Encrypted response envelope."), ...errorResponses },
     }), async (c) => c.json(await messageResponse(c.env, c.get("senderAuth").senderId, c.req.valid("param").messageId), 200));
 }

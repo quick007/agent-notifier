@@ -2,6 +2,7 @@ export {
   bytesToUtf8,
   exportPrivateKeyPkcs8,
   exportPublicKeySpki,
+  fromBase64Url,
   generateEncryptionKeyPair,
   generateSigningKeyPair,
   importEncryptionPrivateKey,
@@ -11,6 +12,7 @@ export {
   sealContentForDevices,
   sha256Base64Url,
   signP256Sha256,
+  toBase64Url,
   utf8ToBytes,
   verifyP256Sha256,
 } from "../dist/index.js";

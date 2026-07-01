@@ -12,11 +12,7 @@ import { rejectPlaintextContent } from "./validation";
 
 const id = (prefix: string) => z.string().regex(new RegExp(`^${prefix}_[A-Za-z0-9_-]+$`));
 
-export const ErrorSchema = z.object({
-  error: z.string(),
-  message: z.string(),
-  retryAfterSeconds: z.number().int().positive().optional(),
-}).openapi("Error");
+export const ErrorSchema = z.object({ error: z.string(), message: z.string(), retryAfterSeconds: z.number().int().positive().optional() }).openapi("Error");
 
 export const IsoTimestamp = z.string().datetime().openapi("IsoTimestamp");
 export const Base64Url = z.string().min(1).openapi("Base64Url");
@@ -45,23 +41,13 @@ export const JsonObject = z.record(z.string(), z.unknown()).superRefine((value, 
 });
 
 export const SenderDraftSchema = z.object({
-  displayName: z.string().min(1),
-  kind: SenderKind,
-  appName: z.string().optional(),
-  machineLabel: z.string().optional(),
-  workspaceLabel: z.string().optional(),
-  encryptionPublicKey: Base64Url,
-  signingPublicKey: Base64Url,
-  capabilities: JsonObject.default({}),
+  displayName: z.string().min(1), kind: SenderKind, appName: z.string().optional(), machineLabel: z.string().optional(),
+  workspaceLabel: z.string().optional(), encryptionPublicKey: Base64Url, signingPublicKey: Base64Url, capabilities: JsonObject.default({}),
 }).openapi("SenderDraft");
 
 export const PushSubscriptionSchema = z.object({
-  endpoint: z.string().url(),
-  expirationTime: z.number().int().nullable().optional(),
-  keys: z.object({
-    p256dh: z.string(),
-    auth: z.string(),
-  }).catchall(z.unknown()),
+  endpoint: z.string().url(), expirationTime: z.number().int().nullable().optional(),
+  keys: z.object({ p256dh: z.string(), auth: z.string() }).catchall(z.unknown()),
 }).catchall(z.unknown()).openapi("PushSubscription");
 
 export const DeviceRegistrationRequestSchema = z.object({
@@ -84,20 +70,12 @@ export const DeviceRegistrationRequestSchema = z.object({
 }).strict().openapi("DeviceRegistrationRequest");
 
 export const PairingEmailStartRequestSchema = z.object({
-  email: z.string().email(),
-  sender: SenderDraftSchema,
-  requestedExpirySeconds: z.number().int().min(60).max(86400).optional(),
+  email: z.string().email(), sender: SenderDraftSchema, requestedExpirySeconds: z.number().int().min(60).max(86400).optional(),
 }).openapi("PairingEmailStartRequest");
 
-export const CodePairingClaimRequestSchema = z.object({
-  code: z.string().min(1),
-  secret: Base64Url,
-  sender: SenderDraftSchema,
-}).openapi("CodePairingClaimRequest");
+export const CodePairingClaimRequestSchema = z.object({ code: z.string().min(1), secret: Base64Url, sender: SenderDraftSchema }).openapi("CodePairingClaimRequest");
 
-export const PairingApproveRequestSchema = z.object({
-  secret: Base64Url.optional(),
-}).openapi("PairingApproveRequest");
+export const PairingApproveRequestSchema = z.object({ secret: Base64Url.optional() }).openapi("PairingApproveRequest");
 
 export const MessageMetadataSchema = z.object({
   schemaVersion: z.literal(SCHEMA_VERSION),
@@ -142,20 +120,11 @@ export const ResponseSubmissionRequestSchema = z.object({
   deviceSignature: Base64Url,
 }).openapi("ResponseSubmissionRequest");
 
-export const PushSubscriptionUpdateRequestSchema = z.object({
-  pushSubscription: PushSubscriptionSchema.nullable(),
-}).openapi("PushSubscriptionUpdateRequest");
+export const PushSubscriptionUpdateRequestSchema = z.object({ pushSubscription: PushSubscriptionSchema.nullable() }).openapi("PushSubscriptionUpdateRequest");
 
-export const HealthResponseSchema = z.object({
-  ok: z.literal(true),
-  service: z.literal("agent-notifier-web"),
-}).openapi("HealthResponse");
+export const HealthResponseSchema = z.object({ ok: z.literal(true), service: z.literal("agent-notifier-web") }).openapi("HealthResponse");
 
-export const PairingSessionResponseSchema = z.object({
-  sessionId: PairingSessionId,
-  expiresAt: IsoTimestamp,
-  status: z.enum(["pending", "claimed"]),
-}).openapi("PairingSessionResponse");
+export const PairingSessionResponseSchema = z.object({ sessionId: PairingSessionId, expiresAt: IsoTimestamp, status: z.enum(["pending", "claimed"]) }).openapi("PairingSessionResponse");
 
 export const PairingStatusResponseSchema = z.object({
   status: z.enum(["not_found", "expired", "paired", "claimed", "pending"]),
@@ -170,38 +139,58 @@ export const PairingStatusResponseSchema = z.object({
   })).optional(),
 }).openapi("PairingStatusResponse");
 
-export const CodePairingStartResponseSchema = z.object({
-  sessionId: PairingSessionId,
-  code: z.string(),
-  secret: Base64Url,
-  expiresAt: IsoTimestamp,
-}).openapi("CodePairingStartResponse");
+export const CodePairingStartResponseSchema = z.object({ sessionId: PairingSessionId, code: z.string(), secret: Base64Url, expiresAt: IsoTimestamp }).openapi("CodePairingStartResponse");
 
-export const PairingApproveResponseSchema = z.object({
-  senderId: SenderId,
-  recipientId: RecipientId,
-  status: z.literal("paired"),
-}).openapi("PairingApproveResponse");
+export const PairingApproveResponseSchema = z.object({ senderId: SenderId, recipientId: RecipientId, status: z.literal("paired") }).openapi("PairingApproveResponse");
 
-export const IdResponseSchema = z.object({
-  recipientId: RecipientId,
-  deviceId: DeviceId,
-}).openapi("IdResponse");
+export const IdResponseSchema = z.object({ recipientId: RecipientId, deviceId: DeviceId }).openapi("IdResponse");
 
-export const MessageStateResponseSchema = z.object({
+export const MessageStateResponseSchema = z.object({ messageId: MessageId, state: DeliveryState }).openapi("MessageStateResponse");
+
+export const MessageStatusResponseSchema = z.object({
   messageId: MessageId,
   state: DeliveryState,
-}).openapi("MessageStateResponse");
+  firstDeliveredAt: IsoTimestamp.nullable(),
+  respondedAt: IsoTimestamp.nullable(),
+  expiresAt: IsoTimestamp,
+}).openapi("MessageStatusResponse");
 
-export const PushConfigResponseSchema = z.object({
-  publicKey: z.string().nullable(),
-  configured: z.boolean(),
-}).openapi("PushConfigResponse");
+export const MessageEventSchema = z.object({
+  id: id("evt"),
+  messageId: MessageId,
+  deviceId: DeviceId.nullable(),
+  senderId: SenderId,
+  recipientId: RecipientId,
+  event: z.string(),
+  createdAt: IsoTimestamp,
+  detailsJson: z.string().nullable(),
+}).openapi("MessageEvent");
 
-export const PushSubscriptionUpdateResponseSchema = z.object({
+export const MessageEventsResponseSchema = z.object({ messageId: MessageId, events: z.array(MessageEventSchema) }).openapi("MessageEventsResponse");
+
+export const MessageResponseEnvelopeSchema = z.object({
+  id: ResponseId,
+  messageId: MessageId,
+  recipientId: RecipientId,
+  senderId: SenderId,
   deviceId: DeviceId,
-  pushEnabled: z.boolean(),
-}).openapi("PushSubscriptionUpdateResponse");
+  kind: ResponseKind,
+  createdAt: IsoTimestamp,
+  expiresAt: IsoTimestamp,
+  fetchedAt: IsoTimestamp.nullable(),
+  ciphertext: Base64Url,
+  contentNonce: Base64Url,
+  deviceSignature: Base64Url,
+  schemaVersion: z.number().int(),
+}).openapi("MessageResponseEnvelope");
+
+export const ResponseStoredResponseSchema = z.object({ messageId: MessageId, responseId: ResponseId, state: z.literal("responded") }).openapi("ResponseStoredResponse");
+
+export const SenderRevokeResponseSchema = z.object({ senderId: SenderId, revoked: z.boolean() }).openapi("SenderRevokeResponse");
+
+export const PushConfigResponseSchema = z.object({ publicKey: z.string().nullable(), configured: z.boolean() }).openapi("PushConfigResponse");
+
+export const PushSubscriptionUpdateResponseSchema = z.object({ deviceId: DeviceId, pushEnabled: z.boolean() }).openapi("PushSubscriptionUpdateResponse");
 
 export const SenderTargetResponseSchema = z.object({
   senderId: SenderId,
@@ -248,8 +237,6 @@ export const DeviceSenderSchema = z.object({
 }).openapi("DeviceSender");
 
 export const DeviceSendersResponseSchema = z.object({ senders: z.array(DeviceSenderSchema) }).openapi("DeviceSendersResponse");
-
-export const AnyJsonResponseSchema = z.record(z.string(), z.unknown()).openapi("JsonResponse");
 
 export type SenderDraft = z.infer<typeof SenderDraftSchema>;
 export type DeviceRegistration = {
