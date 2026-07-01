@@ -50,7 +50,7 @@ export function App() {
       <Route
         path="/inbox"
         element={
-          <Shell route="/inbox" title="Inbox">
+          <Shell ready={ready} route="/inbox" title="Inbox">
             <InboxScreen
               state={app.state}
               onDelete={app.deleteMessage}
@@ -62,7 +62,7 @@ export function App() {
       <Route
         path="/saved"
         element={
-          <Shell route="/saved" title="Saved">
+          <Shell ready={ready} route="/saved" title="Saved">
             <InboxScreen
               savedOnly
               state={app.state}
@@ -75,7 +75,7 @@ export function App() {
       <Route
         path="/message/:messageId"
         element={
-          <Shell route="/inbox" title="Message">
+          <Shell ready={ready} route="/inbox" title="Message">
             <MessageRoute app={app} />
           </Shell>
         }
@@ -84,7 +84,7 @@ export function App() {
       <Route
         path="/senders"
         element={
-          <Shell route="/senders" title="Senders">
+          <Shell ready={ready} route="/senders" title="Senders">
             <SendersScreen
               senders={app.state.senders}
               onRevoke={app.revokeSender}
@@ -96,7 +96,7 @@ export function App() {
       <Route
         path="/senders/:senderId"
         element={
-          <Shell route="/senders" title="Sender">
+          <Shell ready={ready} route="/senders" title="Sender">
             <SenderRoute app={app} />
           </Shell>
         }
@@ -105,7 +105,7 @@ export function App() {
       <Route
         path="/settings"
         element={
-          <Shell route="/settings" title="Settings">
+          <Shell ready={ready} route="/settings" title="Settings">
             <SettingsScreen
               settings={app.state.settings}
               onPreviewPolicy={app.setGlobalPreviewPolicy}
@@ -118,7 +118,7 @@ export function App() {
       <Route
         path="/settings/notifications"
         element={
-          <Shell route="/settings" title="Settings">
+          <Shell ready={ready} route="/settings" title="Settings">
             <PushTroubleshootingScreen
               settings={app.state.settings}
               onPushState={app.setPushState}
@@ -186,13 +186,17 @@ function LegalRoute({ route }: { route: AppRoute }) {
 
 function Shell({
   children,
+  ready,
   route,
   title
 }: {
   children: ReactNode;
+  ready: boolean;
   route: AppRoute;
   title: string;
 }) {
+  if (!ready) return <Navigate replace to="/setup" />;
+
   return (
     <AppShell route={route} title={title}>
       {children}
