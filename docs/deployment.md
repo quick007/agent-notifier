@@ -118,7 +118,6 @@ Runtime values read by the Worker:
 
 - `RESEND_API_KEY`
 - `RESEND_FROM_EMAIL`
-- `APP_PUBLIC_URL`
 - `VAPID_PUBLIC_KEY`
 - `VAPID_PRIVATE_KEY`
 - `VAPID_SUBJECT`
@@ -126,9 +125,10 @@ Runtime values read by the Worker:
 Use Cloudflare secret storage for secret values. Keep `.dev.vars`, `.env`, and
 similar local secret files untracked.
 
-`RESEND_API_KEY`, `RESEND_FROM_EMAIL`, and `APP_PUBLIC_URL` are required for
-email pairing. Missing VAPID values do not reject message creation, but push
-attempts are recorded as `vapid_not_configured`.
+`RESEND_API_KEY` and `RESEND_FROM_EMAIL` are required for email pairing. Email
+links are derived from the incoming Worker request origin. Missing VAPID values
+do not reject message creation, but push attempts are recorded as
+`vapid_not_configured`.
 
 ## Resend And Push
 

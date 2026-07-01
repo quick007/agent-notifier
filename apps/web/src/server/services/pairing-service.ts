@@ -16,7 +16,7 @@ export async function startEmailPairing(env: Env, input: {
   readonly email: string;
   readonly sender: SenderDraft;
   readonly requestedExpirySeconds?: unknown;
-}) {
+}, publicOrigin: string) {
   const db = requireDatabase(env);
   const now = nowIso();
   const recipientId = newId("rcp");
@@ -47,8 +47,15 @@ export async function startEmailPairing(env: Env, input: {
     updatedAt: now,
   }).run();
 
-  const setupUrl = `${publicUrl(env)}/setup/pair/${sessionId}?secret=${encodeURIComponent(secret)}`;
-  await sendSetupEmail(env, { email: input.email, senderDisplayName: input.sender.displayName, setupUrl, expiresAt });
+  const origin = normalizePublicOrigin(publicOrigin);
+  const setupUrl = `${origin}/setup/pair/${sessionId}?secret=${encodeURIComponent(secret)}`;
+  await sendSetupEmail(env, {
+    email: input.email,
+    senderDisplayName: input.sender.displayName,
+    setupUrl,
+    publicOrigin: origin,
+    expiresAt,
+  });
 
   return { sessionId, expiresAt, status: "pending" as const };
 }
@@ -233,8 +240,8 @@ function deviceKeySummary(device: typeof devices.$inferSelect) {
   };
 }
 
-function publicUrl(env: Env): string {
-  return (env.APP_PUBLIC_URL ?? "https://agent-notifier.example").replace(/\/$/, "");
+function normalizePublicOrigin(publicOrigin: string): string {
+  return new URL(publicOrigin).origin;
 }
 
 function humanCode(): string {

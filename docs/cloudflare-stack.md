@@ -50,13 +50,13 @@ The Worker reads:
 - `DB`: D1 binding.
 - `RESEND_API_KEY`.
 - `RESEND_FROM_EMAIL`.
-- `APP_PUBLIC_URL`.
 - `VAPID_PUBLIC_KEY`.
 - `VAPID_PRIVATE_KEY`.
 - `VAPID_SUBJECT`.
 
-Missing Resend values cause email setup to fail with a service error. Missing
-VAPID values make push attempts record `vapid_not_configured`.
+Missing Resend values cause email setup to fail with a service error. Email
+links are derived from the incoming Worker request origin. Missing VAPID values
+make push attempts record `vapid_not_configured`.
 
 ## D1 And Drizzle
 

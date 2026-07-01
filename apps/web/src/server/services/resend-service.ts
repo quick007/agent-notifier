@@ -6,15 +6,16 @@ interface SendSetupEmailInput {
   readonly email: string;
   readonly senderDisplayName: string;
   readonly setupUrl: string;
+  readonly publicOrigin: string;
   readonly expiresAt: string;
 }
 
 export async function sendSetupEmail(env: Env, input: SendSetupEmailInput): Promise<void> {
-  if (!env.RESEND_API_KEY || !env.RESEND_FROM_EMAIL || !env.APP_PUBLIC_URL) {
+  if (!env.RESEND_API_KEY || !env.RESEND_FROM_EMAIL) {
     throw new AppError(503, "email_not_configured", "Setup email is not configured.");
   }
 
-  const baseUrl = env.APP_PUBLIC_URL.replace(/\/$/, "");
+  const baseUrl = new URL(input.publicOrigin).origin;
   const email = renderSetupEmail({
     senderDisplayName: input.senderDisplayName,
     setupUrl: input.setupUrl,

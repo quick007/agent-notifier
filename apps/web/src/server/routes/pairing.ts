@@ -39,7 +39,7 @@ export function registerPairingRoutes<S extends Schema, BasePath extends string>
       operationId: "startEmailPairing",
       request: { body: jsonRequest(PairingEmailStartRequestSchema) },
       responses: { 202: jsonContent(PairingSessionResponseSchema, "Pairing email queued."), ...errorResponses },
-    }), async (c) => c.json(await startEmailPairing(c.env, c.req.valid("json")), 202))
+    }), async (c) => c.json(await startEmailPairing(c.env, c.req.valid("json"), new URL(c.req.url).origin), 202))
     .openapi(createRoute({
       method: "post",
       path: "/api/pairing/code/start",

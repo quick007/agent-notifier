@@ -148,10 +148,12 @@ for (const packageDir of packageDirs) {
     throw new Error(`${manifest.name} must set a public release version`);
   }
 
-  for (const field of ["description", "license"]) {
-    if (typeof manifest[field] !== "string" || manifest[field].trim().length === 0) {
-      throw new Error(`${manifest.name} must define ${field}`);
-    }
+  if (typeof manifest.description !== "string" || manifest.description.trim().length === 0) {
+    throw new Error(`${manifest.name} must define description`);
+  }
+
+  if (manifest.license !== "MIT") {
+    throw new Error(`${manifest.name} must declare the MIT license`);
   }
 
   if (!Array.isArray(manifest.keywords) || manifest.keywords.length === 0) {
@@ -176,6 +178,10 @@ for (const packageDir of packageDirs) {
 
   if (!Array.isArray(manifest.files) || manifest.files.length === 0) {
     throw new Error(`${manifest.name} must define a package files allowlist`);
+  }
+
+  if (!manifest.files.includes("LICENSE")) {
+    throw new Error(`${manifest.name} must include LICENSE in its files allowlist`);
   }
 
   for (const scriptName of Object.keys(manifest.scripts ?? {})) {
@@ -204,6 +210,10 @@ for (const packageDir of packageDirs) {
     const parsed = JSON.parse(result.stdout);
     const pack = Array.isArray(parsed) ? parsed[0] : parsed;
     const packedFiles = new Set(pack.files?.map((file) => file.path.replaceAll("\\", "/")) ?? []);
+
+    if (!packedFiles.has("LICENSE")) {
+      throw new Error(`${manifest.name} does not pack LICENSE`);
+    }
 
     for (const file of pack.files ?? []) {
       const path = file.path.replaceAll("\\", "/");

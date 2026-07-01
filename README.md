@@ -176,7 +176,6 @@ Runtime values read by the Worker for deployed email and push:
 
 - `RESEND_API_KEY`
 - `RESEND_FROM_EMAIL`
-- `APP_PUBLIC_URL`
 - `VAPID_PUBLIC_KEY`
 - `VAPID_PRIVATE_KEY`
 - `VAPID_SUBJECT`
