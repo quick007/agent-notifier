@@ -135,10 +135,22 @@ That package is not published yet. The source implementation exists locally, but
 package records currently return E404 and Codex plugin installation through the
 published MCP package is not verified.
 
-Codex plugin source lives in:
+Codex plugin marketplace root lives in:
 
 ```text
-packages/codex-plugin/agent-notifier
+packages/codex-plugin
+```
+
+It can be added with:
+
+```bash
+codex plugin marketplace add packages/codex-plugin
+```
+
+The plugin bundle source lives in:
+
+```text
+packages/codex-plugin/plugins/agent-notifier
 ```
 
 Claude, Claude Code, CI, and generic agents should use the same local MCP server

@@ -1,6 +1,6 @@
 # Codex Plugin
 
-Status: plugin bundle scaffolded with repo-local marketplace wiring;
+Status: plugin bundle scaffolded with supported repo-local marketplace wiring;
 `packages/mcp` exposes an implemented local stdio MCP server with Agent
 Notifier tools. Live CLI/browser E2EE transport has been verified against the
 deployed Worker, but the published `@agent-notifier/mcp` package and end-to-end
@@ -8,20 +8,32 @@ plugin launch path are not verified yet.
 
 ## Bundle
 
-The installable plugin root is:
+The marketplace root is:
 
 ```text
-packages/codex-plugin/agent-notifier
+packages/codex-plugin
+```
+
+Add it to Codex with:
+
+```bash
+codex plugin marketplace add packages/codex-plugin
+```
+
+The installable plugin bundle source is:
+
+```text
+packages/codex-plugin/plugins/agent-notifier
 ```
 
 The repo-local marketplace file is:
 
 ```text
-packages/codex-plugin/marketplace.json
+packages/codex-plugin/.agents/plugins/marketplace.json
 ```
 
-It exposes the existing plugin root through a local source path of
-`./agent-notifier`. Do not duplicate or move the plugin bundle for marketplace
+It exposes the existing plugin bundle through a local source path of
+`./plugins/agent-notifier`. Do not duplicate the plugin bundle for marketplace
 installation.
 
 It contains:
@@ -84,11 +96,11 @@ The bundled skill must stay concise and must tell Codex to:
 Use the system plugin validator against the plugin root:
 
 ```bash
-python C:\Users\luseu\.codex\skills\.system\plugin-creator\scripts\validate_plugin.py packages\codex-plugin\agent-notifier
+python C:\Users\luseu\.codex\skills\.system\plugin-creator\scripts\validate_plugin.py packages\codex-plugin\plugins\agent-notifier
 ```
 
 Use the system skill validator against the bundled skill:
 
 ```bash
-python C:\Users\luseu\.codex\skills\.system\skill-creator\scripts\quick_validate.py packages\codex-plugin\agent-notifier\skills\agent-notifier
+python C:\Users\luseu\.codex\skills\.system\skill-creator\scripts\quick_validate.py packages\codex-plugin\plugins\agent-notifier\skills\agent-notifier
 ```

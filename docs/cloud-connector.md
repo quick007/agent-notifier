@@ -58,6 +58,7 @@ decryption stay in local CLI/MCP.
 - Published npm install of the MCP package is not yet validated because the
   package has not had its first trusted-publishing release.
 - Plugin marketplace wiring is present at
-  `packages/codex-plugin/marketplace.json`, but the end-to-end plugin launch
-  path still depends on the unverified published MCP package.
+  `packages/codex-plugin/.agents/plugins/marketplace.json`, but the
+  end-to-end plugin launch path still depends on the unverified published MCP
+  package.
 - Any future connector UX must avoid implying remote control, multi-turn chat, or a cloud-readable inbox.

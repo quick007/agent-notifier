@@ -2,20 +2,32 @@
 
 This package contains the Codex plugin bundle source for Agent Notifier.
 
-The installable plugin root is:
+The marketplace root is:
 
 ```text
-packages/codex-plugin/agent-notifier
+packages/codex-plugin
+```
+
+Add it to Codex with:
+
+```bash
+codex plugin marketplace add packages/codex-plugin
+```
+
+The installable plugin bundle source is:
+
+```text
+packages/codex-plugin/plugins/agent-notifier
 ```
 
 Repo-local marketplace wiring lives at:
 
 ```text
-packages/codex-plugin/marketplace.json
+packages/codex-plugin/.agents/plugins/marketplace.json
 ```
 
 The marketplace entry points at the existing bundle with source path
-`./agent-notifier`. Do not duplicate or move the plugin bundle for marketplace
+`./plugins/agent-notifier`. Do not duplicate the plugin bundle for marketplace
 installation.
 
 The bundle includes:
@@ -58,6 +70,7 @@ code.
 ## Development Notes
 
 - Keep the plugin root folder name and `plugin.json` name aligned as `agent-notifier`.
-- Keep `marketplace.json` pointing at `./agent-notifier`.
+- Keep `.agents/plugins/marketplace.json` pointing at
+  `./plugins/agent-notifier`.
 - Do not add a remote MCP connector that receives plaintext message content or sender private keys.
 - If a future cloud connector is added, it must orchestrate local encryption or operate only on ciphertext and public metadata.

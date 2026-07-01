@@ -8,7 +8,7 @@
       "name": "agent-notifier",
       "source": {
         "source": "local",
-        "path": "./agent-notifier"
+        "path": "./plugins/agent-notifier"
       },
       "policy": {
         "installation": "AVAILABLE",

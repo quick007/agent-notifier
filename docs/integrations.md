@@ -15,7 +15,14 @@ If a cloud connector cannot preserve those boundaries, it should not be built as
 
 ## Codex
 
-Codex should use the plugin in `packages/codex-plugin/agent-notifier`.
+Codex should add the repo-local marketplace root with:
+
+```bash
+codex plugin marketplace add packages/codex-plugin
+```
+
+The plugin bundle source lives in
+`packages/codex-plugin/plugins/agent-notifier`.
 See [Codex Plugin](codex-plugin.md) for the plugin bundle and validation notes.
 The current source package for the local MCP server is `packages/mcp`; it
 implements stdio JSON-RPC tool handling locally. The published npm command below
@@ -143,7 +150,7 @@ Short integration copy for the main README:
 
 Agent Notifier is designed for local CLI and local stdio MCP integrations so message content is encrypted before it reaches the hosted service.
 
-- Codex: install the plugin from `packages/codex-plugin/agent-notifier`.
+- Codex: add the marketplace root with `codex plugin marketplace add packages/codex-plugin`.
 - Claude/local MCP: use the `packages/mcp` source package, eventually published as `@agent-notifier/mcp`.
 - CI and generic agents: use the `packages/cli` source package, eventually published as `@agent-notifier/cli`.
 
